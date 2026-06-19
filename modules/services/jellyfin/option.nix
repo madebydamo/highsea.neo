@@ -12,6 +12,12 @@
           options =
             {
               enabled = mkEnableOption "jellyfin service" {rank = 0;};
+              apiKey = mkOption {
+                type = types.str;
+                default = "jellyfinapikey1234567890abcdefghij";
+                description = "Stable API key for Jellyfin (create via Jellyfin Dashboard > API Keys in the UI after first setup, then paste the generated value here; enables declarr auto-configuration for plugins, libraries, repositories etc.)";
+                rank = 5;
+              };
             }
             // neo.mkReverseProxyOptions {
               subdomain = "jellyfin";

@@ -531,7 +531,7 @@
               type = "jellyseerr";
               url = externalUrlFor seerrSub;
               port = 443;
-              stateDir = "${appdata}/jellyseerr";
+              stateDir = "${config.neo.core.volumes.appdata}/seerr/config";
             };
             # main + public + fuller jellyfin ensure declarr's sync_jellyseerr succeeds:
             # - defaultPermissions must be dict (not int from declarr's jellyseerr-settings.json) so perms_to_int doesn't get int
@@ -548,11 +548,11 @@
                 request = true;
                 request4k = true;
               };
-              mediaServerType = 2; # 2 = jellyfin (matches seerr auth serverType)
+              # mediaServerType = 4; # 2 = jellyfin (matches seerr auth serverType)
             };
-            public = {
-              initialized = true;
-            };
+            # public = {
+            #   initialized = false;
+            # };
             jellyfin = {
               # Use public HTTPS URL (via SWAG) so that declarr (on host) can reach it if needed
               # (e.g. run_ path) and seerr gets configured with a reachable jellyfin address.
@@ -678,15 +678,29 @@
             ++ (optionals hs.radarr.enabled ["docker-radarr.service"])
             ++ (optionals hs.prowlarr.enabled ["docker-prowlarr.service"])
             ++ (optionals hs.qbittorrent.enabled ["docker-qbittorrent.service"])
-            ++ (optionals (hs.seerr.enabled or false) ["docker-seerr.service" "docker-jellyfin.service"]);
+            ++ (optionals (hs.jellyfin.enabled or false) ["docker-jellyfin.service"]);
+          # We intentionally do not list docker-seerr here (to avoid dep cycle, since
+          # docker-seerr after/wants declarr when declarr enabled). Instead, on successful
+          # finish of declarr we use ExecStartPost to restart docker-seerr.service so it
+          # picks up any config changes from the sync (e.g. *arr connections, libraries).
           wants = ["docker.service"];
           wantedBy = ["multi-user.target"];
           inherit preStart;
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            User = "root";
-          };
+          serviceConfig =
+            {
+              Type = "oneshot";
+              RemainAfterExit = true;
+              User = "root";
+              Restart = "on-failure";
+              RestartSec = 5;
+              StartLimitBurst = 3;
+              StartLimitIntervalSec = 300;
+            }
+            // lib.optionalAttrs (hs.seerr.enabled or false) {
+              ExecStartPost = ''
+                ${pkgs.systemd}/bin/systemctl restart --no-block docker-seerr.service --no-block
+              '';
+            };
           script = ''
             echo "Running declarr sync for high_sea *arr stack..."
             ${declarrPkg}/bin/declarr --sync ${configFile}
