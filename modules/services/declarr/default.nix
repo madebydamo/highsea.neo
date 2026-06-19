@@ -1,5 +1,5 @@
 # declarr service implementation. Generates config from enabled high_sea *arr services and auto-wires qbittorrent + prowlarr apps + seerr.
-{...}: {
+{inputs, ...}: {
   flake.modules.nixos.declarr = {
     config,
     lib,
@@ -9,37 +9,65 @@
     with lib; let
       cfg = config.neo.services.declarr;
       hs = config.neo.services;
-
-      # Stable defaults for auto-linking (override via settings if wanted)
+      declarrPkg = inputs.declarr.packages.${pkgs.system}.declarr;
       defaultApiKey = "d3c1arrh0m3s3rv3r4p1k3y32ch4rsabcd";
-      qbitUser = "admin";
-      qbitPass = "adminadmin";
+      qbitUser = hs.qbittorrent.username or "admin";
+      qbitPass = hs.qbittorrent.password or "adminadmin";
+      sonarrApiKey =
+        if (hs.sonarr.enabled or false) && (hs.sonarr.apiKey or null) != null
+        then hs.sonarr.apiKey
+        else defaultApiKey;
+      radarrApiKey =
+        if (hs.radarr.enabled or false) && (hs.radarr.apiKey or null) != null
+        then hs.radarr.apiKey
+        else defaultApiKey;
+      prowlarrApiKey =
+        if (hs.prowlarr.enabled or false) && (hs.prowlarr.apiKey or null) != null
+        then hs.prowlarr.apiKey
+        else defaultApiKey;
+
+      # Declarr runs as a host systemd service (not in the "internal" docker network),
+      # so it cannot resolve docker container hostnames like "radarr". Use the public
+      # HTTPS URLs exposed via SWAG (subdomain + swag.domain) for all URLs that declarr
+      # itself uses to connect to services (the "declarr.url" entries and the jellyseerr
+      # radarr/sonarr/fix lookup entries). Inter-container references that the *arr apps
+      # themselves use (e.g. sonarr's download client host, prowlarr app baseUrls) stay
+      # as internal docker names so containers can reach each other directly on the
+      # internal network without going through the reverse proxy.
+      swag = config.neo.services.swag or {};
+      domain = swag.domain or null;
+      radarrSub = (hs.radarr or {}).subdomain or "radarr";
+      sonarrSub = (hs.sonarr or {}).subdomain or "sonarr";
+      prowlarrSub = (hs.prowlarr or {}).subdomain or "prowlarr";
+      seerrSub = (hs.seerr or {}).subdomain or "seerr";
+      jellyfinSub = (hs.jellyfin or {}).subdomain or "jellyfin";
+      externalUrlFor = sub:
+        if domain != null
+        then "https://${sub}.${domain}"
+        else null;
 
       appdata = "${config.neo.core.volumes.appdata}/declarr";
       configFile = "${appdata}/config.json";
 
-      # Build declarr config sections only for enabled relevant services
       arrConfig =
         {
           declarr = {
             stateDir = cfg.stateDir;
             formatDbRepo = "https://github.com/Dictionarry-Hub/Database";
             formatDbBranch = "stable";
-            globalResolvePaths = [
-              "$.*.config.host.password"
-              "$.*.config.host.passwordConfirmation"
-              "$.*.config.host.apiKey"
-              "$.*.applications.*.fields.apiKey"
-              "$.*.indexer.*.fields.password"
-              "$.*.downloadClient.*.fields.password"
-            ];
+            globalResolvePaths = [];
           };
         }
         // optionalAttrs hs.sonarr.enabled {
           sonarr = {
             declarr = {
               type = "sonarr";
-              url = "http://sonarr:8989";
+              url = let
+                u = externalUrlFor sonarrSub;
+              in
+                if u != null
+                then u
+                else "http://sonarr:8989";
             };
             rootFolder = ["/tv"];
             downloadClient = optionalAttrs hs.qbittorrent.enabled {
@@ -140,13 +168,12 @@
                 timeFormat = "HH:mm";
               };
               host = {
-                apiKey = defaultApiKey;
+                apiKey = sonarrApiKey;
                 analyticsEnabled = false;
-                authenticationMethod = "forms";
-                authenticationRequired = "enabled";
-                username = "admin";
-                password = "adminadmin";
-                passwordConfirmation = "adminadmin";
+                authenticationMethod = "external";
+                # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
+                # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr/seerr etc.
+                authenticationRequired = "DisabledForLocalAddresses";
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 8989;
@@ -203,7 +230,12 @@
           radarr = {
             declarr = {
               type = "radarr";
-              url = "http://radarr:7878";
+              url = let
+                u = externalUrlFor radarrSub;
+              in
+                if u != null
+                then u
+                else "http://radarr:7878";
             };
             rootFolder = ["/movies"];
             downloadClient = optionalAttrs hs.qbittorrent.enabled {
@@ -304,13 +336,12 @@
                 timeFormat = "HH:mm";
               };
               host = {
-                apiKey = defaultApiKey;
+                apiKey = radarrApiKey;
                 analyticsEnabled = false;
-                authenticationMethod = "forms";
-                authenticationRequired = "enabled";
-                username = "admin";
-                password = "adminadmin";
-                passwordConfirmation = "adminadmin";
+                authenticationMethod = "external";
+                # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
+                # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr/seerr etc.
+                authenticationRequired = "DisabledForLocalAddresses";
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 7878;
@@ -361,7 +392,12 @@
           prowlarr = {
             declarr = {
               type = "prowlarr";
-              url = "http://prowlarr:9696";
+              url = let
+                u = externalUrlFor prowlarrSub;
+              in
+                if u != null
+                then u
+                else "http://prowlarr:9696";
             };
             config = {
               ui = {
@@ -370,10 +406,12 @@
                 timeFormat = "HH:mm";
               };
               host = {
-                apiKey = defaultApiKey;
+                apiKey = prowlarrApiKey;
                 analyticsEnabled = false;
-                authenticationMethod = "forms";
-                authenticationRequired = "enabled";
+                authenticationMethod = "external";
+                # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
+                # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr/seerr etc.
+                authenticationRequired = "DisabledForLocalAddresses";
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 9696;
@@ -430,7 +468,7 @@
                   fields = {
                     prowlarrUrl = "http://prowlarr:9696";
                     baseUrl = "http://sonarr:8989";
-                    apiKey = defaultApiKey;
+                    apiKey = sonarrApiKey;
                   };
                 };
               })
@@ -441,7 +479,7 @@
                   fields = {
                     prowlarrUrl = "http://prowlarr:9696";
                     baseUrl = "http://radarr:7878";
-                    apiKey = defaultApiKey;
+                    apiKey = radarrApiKey;
                   };
                 };
               });
@@ -457,7 +495,7 @@
                   downloadlink2 = 0;
                   "torrentBaseSettings.seedRatio" = 10;
                 };
-                appProfileId = "Interactive Search";
+                appProfileId = "Standard";
               };
               "The Pirate Bay" = {
                 indexerName = "The Pirate Bay";
@@ -467,7 +505,7 @@
                   definitionFile = "thepiratebay";
                   "torrentBaseSettings.seedRatio" = 10;
                 };
-                appProfileId = "Interactive Search";
+                appProfileId = "Standard";
               };
               "YTS" = {
                 indexerName = "YTS";
@@ -477,9 +515,13 @@
                   definitionFile = "yts";
                   "torrentBaseSettings.seedRatio" = 10;
                 };
-                appProfileId = "Interactive Search";
+                appProfileId = "Standard";
               };
             };
+            # Provide key (as null) so declarr's prowlarr sync doesn't KeyError on cfg["indexerProxy"].
+            # (declarr always does self.sync_contracts("/indexerProxy", self.cfg["indexerProxy"]) for prowlarr type,
+            # even if no proxies. User can populate via extraConfig or add FlareSolverr etc. if desired.)
+            indexerProxy = null;
           };
         }
         // optionalAttrs (hs.seerr.enabled or false) {
@@ -487,37 +529,128 @@
           jellyseerr = {
             declarr = {
               type = "jellyseerr";
-              url = "http://seerr:5055";
-              port = 5055;
+              url = externalUrlFor seerrSub;
+              port = 443;
               stateDir = "${appdata}/jellyseerr";
             };
-            # Minimal to link; declarr will init and sync
+            # main + public + fuller jellyfin ensure declarr's sync_jellyseerr succeeds:
+            # - defaultPermissions must be dict (not int from declarr's jellyseerr-settings.json) so perms_to_int doesn't get int
+            # - username/email/password must exist (dummies ok) to avoid KeyError on del in sync_jellyseerr
+            #   (they are removed before writing the final seerr settings.json)
+            # - public.initialized avoids re-running first-time wizard
+            # declarr's deep_merge(user_prio, its_default) + perms conversion + library id gen + profileId lookup will fill the rest.
+            # radarr/sonarr links are the key auto-wiring provided here.
+            main = {
+              defaultPermissions = {
+                autoApprove = true;
+                autoApprove4k = true;
+                autoRequest = true;
+                request = true;
+                request4k = true;
+              };
+              mediaServerType = 2; # 2 = jellyfin (matches seerr auth serverType)
+            };
+            public = {
+              initialized = true;
+            };
             jellyfin = {
-              # Will be configured interactively or via extra; basic hook
-              ip = "jellyfin";
-              port = 8096;
-              useSsl = false;
+              # Use public HTTPS URL (via SWAG) so that declarr (on host) can reach it if needed
+              # (e.g. run_ path) and seerr gets configured with a reachable jellyfin address.
+              # Jellyfin uses host networking + its subdomain proxy (auth disabled).
+              ip =
+                if domain != null
+                then "${jellyfinSub}.${domain}"
+                else "jellyfin";
+              port =
+                if domain != null
+                then 443
+                else 8096;
+              useSsl = domain != null;
+              # satisfy dels (deleted pre-write; only for declarr run_ path which we don't use)
+              username = "admin";
+              email = "admin@example.com";
+              password = "admin";
+              # reasonable defaults for connection; user can further customize via extraConfig or seerr UI
+              name = "Jellyfin";
+              urlBase = "";
+              externalHostname =
+                if domain != null
+                then "https://${jellyfinSub}.${domain}"
+                else "";
+              jellyfinForgotPasswordUrl = "";
+              apiKey = "";
+              libraries = [];
             };
             sonarr = lib.optionals (hs.sonarr.enabled or false) [
               {
-                activeProfileName = "1080p Balanced";
-                apiKey = defaultApiKey;
-                hostname = "sonarr";
-                port = 8989;
-                baseUrl = "";
+                # Fields for declarr's fix() (which does quality profile ID lookup via *arr API from the host)
+                # + fields for the final Seerr settings.json (seerr container will reach sonarr via the public
+                # HTTPS URL through SWAG, since declarr host cannot use docker-internal hostnames).
+                # Adapted from declarr repo's example jellyseerr configs.
                 activeDirectory = "/tv";
+                activeProfileName = "1080p Balanced";
+                animeTags = [];
+                apiKey = sonarrApiKey;
+                baseUrl = "";
+                enableSeasonFolders = true;
+                externalUrl = let
+                  u = externalUrlFor sonarrSub;
+                in
+                  if u != null
+                  then u
+                  else "";
+                hostname =
+                  if domain != null
+                  then "${sonarrSub}.${domain}"
+                  else "sonarr";
+                id = 0;
+                is4k = false;
+                isDefault = true;
+                name = "sonarr";
+                port =
+                  if domain != null
+                  then 443
+                  else 8989;
+                preventSearch = false;
+                syncEnabled = true;
+                tagRequests = false;
+                tags = [];
+                useSsl = domain != null;
+                # placeholders overwritten by declarr during sync (fix() does the /api/v3/qualityprofile lookup)
                 activeProfileId = 0;
                 activeServerId = 0;
               }
             ];
             radarr = lib.optionals (hs.radarr.enabled or false) [
               {
-                activeProfileName = "1080p Balanced";
-                apiKey = defaultApiKey;
-                hostname = "radarr";
-                port = 7878;
-                baseUrl = "";
                 activeDirectory = "/movies";
+                activeProfileName = "1080p Balanced";
+                apiKey = radarrApiKey;
+                baseUrl = "";
+                externalUrl = let
+                  u = externalUrlFor radarrSub;
+                in
+                  if u != null
+                  then u
+                  else "";
+                hostname =
+                  if domain != null
+                  then "${radarrSub}.${domain}"
+                  else "radarr";
+                id = 0;
+                is4k = false;
+                isDefault = true;
+                minimumAvailability = "inCinemas";
+                name = "radarr";
+                port =
+                  if domain != null
+                  then 443
+                  else 7878;
+                preventSearch = false;
+                syncEnabled = true;
+                tagRequests = false;
+                tags = [];
+                useSsl = domain != null;
                 activeProfileId = 0;
                 activeServerId = 0;
               }
@@ -540,7 +673,8 @@
       config = mkIf cfg.enabled {
         systemd.services.declarr = {
           after =
-            (optionals hs.sonarr.enabled ["docker-sonarr.service"])
+            (optionals (config.neo.services.swag.enabled or false) ["docker-swag.service"])
+            ++ (optionals hs.sonarr.enabled ["docker-sonarr.service"])
             ++ (optionals hs.radarr.enabled ["docker-radarr.service"])
             ++ (optionals hs.prowlarr.enabled ["docker-prowlarr.service"])
             ++ (optionals hs.qbittorrent.enabled ["docker-qbittorrent.service"])
@@ -555,11 +689,10 @@
           };
           script = ''
             echo "Running declarr sync for high_sea *arr stack..."
-            ${pkgs.nix}/bin/nix run github:upidapi/declarr -- --sync ${configFile}
+            ${declarrPkg}/bin/declarr --sync ${configFile}
             echo "declarr sync complete."
           '';
         };
       };
     };
 }
-

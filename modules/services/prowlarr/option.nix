@@ -21,6 +21,10 @@
             }
             // neo.mkReverseProxyOptions {
               subdomain = "prowlarr";
+              auth.publicPaths = [
+                "^/api/"
+                "^/ping"
+              ];
             }
             // neo.mkVpnOptions {
               enabled = true;

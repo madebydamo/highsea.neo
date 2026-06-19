@@ -21,6 +21,10 @@
             }
             // neo.mkReverseProxyOptions {
               subdomain = "radarr";
+              auth.publicPaths = [
+                "^/api/"
+                "^/ping"
+              ];
             }
             // neo.mkVpnOptions {
               enabled = true;

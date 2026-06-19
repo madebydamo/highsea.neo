@@ -21,6 +21,10 @@
             }
             // neo.mkReverseProxyOptions {
               subdomain = "sonarr";
+              auth.publicPaths = [
+                "^/api/"
+                "^/ping"
+              ];
             }
             // neo.mkVpnOptions {
               enabled = true;

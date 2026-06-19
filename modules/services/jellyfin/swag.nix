@@ -18,13 +18,24 @@
 
         location / {
           include /config/nginx/proxy.conf;
-          include /config/nginx/resolver.conf;
-          set $upstream_app host.docker.internal;
-          set $upstream_port 8096;
-          set $upstream_proto http;
-          proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+          proxy_pass http://host.docker.internal:8096;
+          proxy_set_header Range $http_range;
+          proxy_set_header If-Range $http_if_range;
           ${lib.neo.authBlock config cfg}
         }
+
+        location ~ (/jellyfin)?/socket {
+          include /config/nginx/proxy.conf;
+          proxy_pass http://host.docker.internal:8096;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Host $http_host;
+        }
+
         ${lib.neo.authLocations config cfg}
       }
     '';

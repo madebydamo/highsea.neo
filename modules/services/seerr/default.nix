@@ -1,4 +1,4 @@
-# Seerr (jellyseerr) service implementation.
+# Seerr service implementation.
 {...}: {
   flake.modules.nixos.seerr = {
     config,
@@ -12,6 +12,8 @@
         systemd.services.docker-seerr.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/seerr/config";
+            user = "1000";
+            group = "1000";
           })
         ];
 
@@ -20,13 +22,18 @@
             PUID = toString config.neo.core.uid;
             PGID = toString config.neo.core.gid;
             TZ = config.neo.core.timeZone;
+            LOG_LEVEL = "debug";
+            PORT = "5055";
           };
-          image = "lscr.io/linuxserver/jellyseerr:latest";
+          image = "ghcr.io/seerr-team/seerr:latest";
           autoStart = true;
           volumes = [
             "${config.neo.core.volumes.appdata}/seerr/config:/app/config"
           ];
           networks = ["internal"];
+          extraOptions = [
+            "--init"
+          ];
         };
       };
     };

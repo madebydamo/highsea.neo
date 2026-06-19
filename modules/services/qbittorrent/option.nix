@@ -39,6 +39,7 @@
             }
             // neo.mkReverseProxyOptions {
               subdomain = "qbittorrent";
+              auth.available = false;
             }
             // neo.mkVpnOptions {
               enabled = true;

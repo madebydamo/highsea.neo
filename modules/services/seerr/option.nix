@@ -1,4 +1,4 @@
-# Seerr (jellyseerr) service options.
+# Seerr service options.
 {...}: {
   flake.modules.nixos.seerr-option = {
     config,
@@ -11,19 +11,23 @@
         type = types.submodule {
           options =
             {
-              enabled = mkEnableOption "seerr service (jellyseerr; declarr support)" {rank = 0;};
+              enabled = mkEnableOption "seerr service (seerr; declarr support)" {rank = 0;};
             }
             // neo.mkReverseProxyOptions {
               subdomain = "seerr";
+              auth.publicPaths = [
+                "^/api/"
+                "^/ping"
+              ];
             }
             // lib.neo.mkServiceMeta {
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyseerr.svg";
               description = ''
-                Jellyseerr is a free and open source software application for managing requests for your media library. It is a fork of Overseerr built to bring Jellyfin support.
+                Seerr is a free and open source software application for managing requests for your media library. It is the current merged successor to Jellyseerr and Overseerr (Jellyseerr/Overseerr merger project).
               '';
-              projectUrl = "https://docs.jellyseerr.dev/";
-              githubUrl = "https://github.com/Fallenbagel/jellyseerr";
-              releaseUrl = "https://github.com/Fallenbagel/jellyseerr/releases";
+              projectUrl = "https://docs.seerr.dev/";
+              githubUrl = "https://github.com/seerr-team/seerr";
+              releaseUrl = "https://github.com/seerr-team/seerr/releases";
             };
         };
         default = {};
