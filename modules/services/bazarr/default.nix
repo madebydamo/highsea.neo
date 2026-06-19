@@ -11,6 +11,15 @@
       config = mkIf cfg.enabled {
         systemd.services.docker-bazarr.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.media}/TV";
+          })
+          (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.media}/Movies";
+          })
+          (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.appdata}/bazarr";
+          })
+          (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/bazarr/config";
           })
         ];

@@ -11,6 +11,12 @@
       config = mkIf cfg.enabled {
         systemd.services.docker-qbittorrent.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.appdata}/qbittorrent";
+          })
+          (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.appdata}/qbittorrent/downloads";
+          })
+          (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/qbittorrent/config";
           })
           (lib.neo.mkActivationScriptForDir config {
@@ -59,7 +65,7 @@
           autoStart = true;
           volumes = [
             "${config.neo.core.volumes.appdata}/qbittorrent/config:/config"
-            "${config.neo.core.volumes.data}/Downloads:/downloads"
+            "${config.neo.core.volumes.appdata}/qbittorrent/downloads:/downloads"
           ];
           networks = ["internal"];
         };

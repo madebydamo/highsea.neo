@@ -11,6 +11,9 @@
       config = mkIf cfg.enabled {
         systemd.services.docker-prowlarr.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.appdata}/prowlarr";
+          })
+          (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/prowlarr/config";
           })
         ];
