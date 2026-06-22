@@ -25,6 +25,9 @@
           (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/tdarr/temp";
           })
+          (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.media}";
+          })
         ];
 
         virtualisation.oci-containers.containers.tdarr = {
@@ -48,8 +51,8 @@
             "${config.neo.core.volumes.appdata}/tdarr/config:/app/configs"
             "${config.neo.core.volumes.appdata}/tdarr/server:/app/server"
             "${config.neo.core.volumes.appdata}/tdarr/logs:/app/logs"
-            "${config.neo.core.volumes.media}:/media"
             "${config.neo.core.volumes.appdata}/tdarr/temp:/temp"
+            "${config.neo.core.volumes.media}:/media"
           ];
           networks = ["internal"];
         };

@@ -11,7 +11,7 @@
       config = mkIf cfg.enabled {
         systemd.services.docker-jellyfin.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.media}/";
+            dirPath = "${config.neo.core.volumes.media}";
           })
           (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/jellyfin";

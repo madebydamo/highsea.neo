@@ -11,6 +11,9 @@
       config = mkIf cfg.enabled {
         systemd.services.docker-sonarr.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.data}/Downloads";
+          })
+          (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.media}/TV";
           })
           (lib.neo.mkActivationScriptForDir config {

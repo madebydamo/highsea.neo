@@ -14,6 +14,12 @@
             dirPath = "${config.neo.core.volumes.media}/Movies";
           })
           (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.data}/Downloads";
+          })
+          (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.appdata}/radarr";
+          })
+          (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/radarr/config";
           })
         ];

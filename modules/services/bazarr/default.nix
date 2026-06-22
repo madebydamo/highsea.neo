@@ -22,6 +22,9 @@
           (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/bazarr/config";
           })
+          (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.data}/Downloads";
+          })
         ];
 
         virtualisation.oci-containers.containers.bazarr = {
