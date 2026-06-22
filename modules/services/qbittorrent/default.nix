@@ -11,6 +11,9 @@
       config = mkIf cfg.enabled {
         systemd.services.docker-qbittorrent.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
+            dirPath = "${config.neo.core.volumes.data}/Downloads";
+          })
+          (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/qbittorrent";
           })
           (lib.neo.mkActivationScriptForDir config {
@@ -33,6 +36,7 @@
               Accepted=true
 
               [Preferences]
+              IPFilter\BannedIPs=
               Connection\PortRange=${toString cfg.listenPort}
               Connection\PortRangeMin=${toString cfg.listenPort}
               Connection\UPnP=false
@@ -46,8 +50,6 @@
               WebUI\Password_PBKDF2="@ByteArray(ARQ77eY1NUZaQsuDHbIMCA==:0WMRkYTUWVT9wVvdDtHAjU9b3b7uB8NR1Gur2hmQCvCDpm39Q+PsJRJPaCU51dEiz+dTzh8qbPsL8WkFljQYFQ==)"
               WebUI\Port=${toString cfg.webPort}
               WebUI\LocalHostAuth=false
-              WebUI\AuthSubnetWhitelistEnabled=true
-              WebUI\AuthSubnetWhitelist=0.0.0.0/0,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
             '';
             mode = "0644";
           })
@@ -60,12 +62,13 @@
             TZ = config.neo.core.timeZone;
             UMASK_SET = "022";
             WEBUI_PORT = toString cfg.webPort;
+            TORRENTING_PORT = toString cfg.listenPort;
           };
           image = "lscr.io/linuxserver/qbittorrent:latest";
           autoStart = true;
           volumes = [
             "${config.neo.core.volumes.appdata}/qbittorrent/config:/config"
-            "${config.neo.core.volumes.appdata}/qbittorrent/downloads:/downloads"
+            "${config.neo.core.volumes.data}/Downloads:/downloads"
           ];
           networks = ["internal"];
         };
