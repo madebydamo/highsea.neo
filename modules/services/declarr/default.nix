@@ -9,7 +9,7 @@
     with lib; let
       cfg = config.neo.services.declarr;
       hs = config.neo.services;
-      declarrPkg = inputs.declarr.packages.${pkgs.system}.declarr;
+      declarrPkg = inputs.declarr.packages.${pkgs.stdenv.hostPlatform.system}.declarr;
       defaultApiKey = "d3c1arrh0m3s3rv3r4p1k3y32ch4rsabcd";
       qbitUser = hs.qbittorrent.username or "admin";
       qbitPass = hs.qbittorrent.password or "adminadmin";
