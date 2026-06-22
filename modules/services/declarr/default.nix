@@ -548,38 +548,15 @@
                 request = true;
                 request4k = true;
               };
-              # mediaServerType = 4; # 2 = jellyfin (matches seerr auth serverType)
             };
             # public = {
             #   initialized = false;
             # };
             jellyfin = {
-              # Use public HTTPS URL (via SWAG) so that declarr (on host) can reach it if needed
-              # (e.g. run_ path) and seerr gets configured with a reachable jellyfin address.
-              # Jellyfin uses host networking + its subdomain proxy (auth disabled).
-              ip =
-                if domain != null
-                then "${jellyfinSub}.${domain}"
-                else "jellyfin";
-              port =
-                if domain != null
-                then 443
-                else 8096;
-              useSsl = domain != null;
-              # satisfy dels (deleted pre-write; only for declarr run_ path which we don't use)
+              ip = "jellyfin";
               username = "admin";
               email = "admin@example.com";
               password = "admin";
-              # reasonable defaults for connection; user can further customize via extraConfig or seerr UI
-              name = "Jellyfin";
-              urlBase = "";
-              externalHostname =
-                if domain != null
-                then "https://${jellyfinSub}.${domain}"
-                else "";
-              jellyfinForgotPasswordUrl = "";
-              apiKey = "";
-              libraries = [];
             };
             sonarr = lib.optionals (hs.sonarr.enabled or false) [
               {
