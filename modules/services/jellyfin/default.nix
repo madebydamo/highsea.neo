@@ -32,6 +32,7 @@
           };
           image = "lscr.io/linuxserver/jellyfin:latest";
           autoStart = true;
+          devices = ["/dev/dri:/dev/dri"];
           volumes = [
             "${config.neo.core.volumes.appdata}/jellyfin/config:/config"
             "${config.neo.core.volumes.appdata}/jellyfin/cache:/cache"
