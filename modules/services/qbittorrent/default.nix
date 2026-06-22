@@ -47,7 +47,7 @@
               WebUI\Address=*
               WebUI\ServerDomains=*
               WebUI\Username=${cfg.username}
-              WebUI\Password_PBKDF2="@ByteArray(ARQ77eY1NUZaQsuDHbIMCA==:0WMRkYTUWVT9wVvdDtHAjU9b3b7uB8NR1Gur2hmQCvCDpm39Q+PsJRJPaCU51dEiz+dTzh8qbPsL8WkFljQYFQ==)"
+              WebUI\Password_PBKDF2="@ByteArray(Q4HqfVHfF015316LHrpBtQ==:iKqHM6PlcnmWVtB16TGU5qMSB7gxfLFDxkmf0/B5thp8gT6fyb8V1jSwA34oKzws8EgBwLiYH9YUywIS06Dczg==)"
               WebUI\Port=${toString cfg.webPort}
               WebUI\LocalHostAuth=false
             '';
