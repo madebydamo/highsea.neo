@@ -47,6 +47,7 @@
           };
           image = "ghcr.io/haveagitgat/tdarr:latest";
           autoStart = true;
+          devices = ["/dev/dri:/dev/dri"];
           volumes = [
             "${config.neo.core.volumes.appdata}/tdarr/config:/app/configs"
             "${config.neo.core.volumes.appdata}/tdarr/server:/app/server"
