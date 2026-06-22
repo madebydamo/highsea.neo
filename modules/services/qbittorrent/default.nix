@@ -32,6 +32,18 @@
               enabled=false
               program=
 
+              [BitTorrent]
+              Session\AddTorrentStopped=false
+              Session\DefaultSavePath=/downloads
+              Session\ExcludedFileNames=
+              Session\GlobalMaxInactiveSeedingMinutes=1440
+              Session\GlobalMaxRatio=1.5
+              Session\GlobalMaxSeedingMinutes=1440
+              Session\Port=${toString cfg.listenPort}
+              Session\QueueingSystemEnabled=true
+              Session\ShareLimitAction=Stop
+              Session\TempPath=/downloads/incomplete/
+
               [LegalNotice]
               Accepted=true
 
