@@ -16,6 +16,7 @@
                 type = types.str;
                 default = "/var/lib/declarr";
                 description = "State dir for declarr (format db etc)";
+                internal = true;
                 rank = 10;
               };
               extraConfig = mkOption {
@@ -42,3 +43,4 @@
       };
     };
 }
+
