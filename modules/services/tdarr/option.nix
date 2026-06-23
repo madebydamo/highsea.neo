@@ -23,7 +23,7 @@
               ports = [8265];
             }
             // lib.neo.mkServiceMeta {
-              icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/tdarr.svg";
+              icon = "https://home.tdarr.io/static/media/logo3-min.246d6df44c7f16ddebaf.png";
               description = ''
                 Tdarr is a cross-platform conditional based transcoding application for automating media library transcode/remux management in order to process your media files.
               '';
