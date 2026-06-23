@@ -47,7 +47,8 @@
         else null;
 
       appdata = "${config.neo.core.volumes.appdata}/declarr";
-      configFile = "${appdata}/config.json";
+      arrConfigFile = "${appdata}/config.json";
+      seerrConfigFile = "${appdata}/seerr-config.json";
 
       arrConfig =
         {
@@ -523,117 +524,117 @@
             # even if no proxies. User can populate via extraConfig or add FlareSolverr etc. if desired.)
             indexerProxy = null;
           };
-        }
-        // optionalAttrs (hs.seerr.enabled or false) {
-          # jellyseerr under seerr key for declarr
-          jellyseerr = {
-            declarr = {
-              type = "jellyseerr";
-              url = externalUrlFor seerrSub;
-              port = 443;
-              stateDir = "${config.neo.core.volumes.appdata}/seerr/config";
-            };
-            # main + public + fuller jellyfin ensure declarr's sync_jellyseerr succeeds:
-            # - defaultPermissions must be dict (not int from declarr's jellyseerr-settings.json) so perms_to_int doesn't get int
-            # - username/email/password must exist (dummies ok) to avoid KeyError on del in sync_jellyseerr
-            #   (they are removed before writing the final seerr settings.json)
-            # - public.initialized avoids re-running first-time wizard
-            # declarr's deep_merge(user_prio, its_default) + perms conversion + library id gen + profileId lookup will fill the rest.
-            # radarr/sonarr links are the key auto-wiring provided here.
-            main = {
-              defaultPermissions = {
-                autoApprove = true;
-                autoApprove4k = true;
-                autoRequest = true;
-                request = true;
-                request4k = true;
-              };
-            };
-            # public = {
-            #   initialized = false;
-            # };
-            jellyfin = {
-              ip = "jellyfin";
-              username = "admin";
-              email = "admin@example.com";
-              password = "admin";
-            };
-            sonarr = lib.optionals (hs.sonarr.enabled or false) [
-              {
-                # Fields for declarr's fix() (which does quality profile ID lookup via *arr API from the host)
-                # + fields for the final Seerr settings.json (seerr container will reach sonarr via the public
-                # HTTPS URL through SWAG, since declarr host cannot use docker-internal hostnames).
-                # Adapted from declarr repo's example jellyseerr configs.
-                activeDirectory = "/tv";
-                activeProfileName = "1080p Balanced";
-                animeTags = [];
-                apiKey = sonarrApiKey;
-                baseUrl = "";
-                enableSeasonFolders = true;
-                externalUrl = let
-                  u = externalUrlFor sonarrSub;
-                in
-                  if u != null
-                  then u
-                  else "";
-                hostname =
-                  if domain != null
-                  then "${sonarrSub}.${domain}"
-                  else "sonarr";
-                id = 0;
-                is4k = false;
-                isDefault = true;
-                name = "sonarr";
-                port =
-                  if domain != null
-                  then 443
-                  else 8989;
-                preventSearch = false;
-                syncEnabled = true;
-                tagRequests = false;
-                tags = [];
-                useSsl = domain != null;
-                # placeholders overwritten by declarr during sync (fix() does the /api/v3/qualityprofile lookup)
-                activeProfileId = 0;
-                activeServerId = 0;
-              }
-            ];
-            radarr = lib.optionals (hs.radarr.enabled or false) [
-              {
-                activeDirectory = "/movies";
-                activeProfileName = "1080p Balanced";
-                apiKey = radarrApiKey;
-                baseUrl = "";
-                externalUrl = let
-                  u = externalUrlFor radarrSub;
-                in
-                  if u != null
-                  then u
-                  else "";
-                hostname =
-                  if domain != null
-                  then "${radarrSub}.${domain}"
-                  else "radarr";
-                id = 0;
-                is4k = false;
-                isDefault = true;
-                minimumAvailability = "inCinemas";
-                name = "radarr";
-                port =
-                  if domain != null
-                  then 443
-                  else 7878;
-                preventSearch = false;
-                syncEnabled = true;
-                tagRequests = false;
-                tags = [];
-                useSsl = domain != null;
-                activeProfileId = 0;
-                activeServerId = 0;
-              }
-            ];
-          };
         };
+      seerrConfig = optionalAttrs (hs.seerr.enabled or false) {
+        # jellyseerr under seerr key for declarr
+        jellyseerr = {
+          declarr = {
+            type = "jellyseerr";
+            url = externalUrlFor seerrSub;
+            port = 443;
+            stateDir = "${config.neo.core.volumes.appdata}/seerr/config";
+          };
+          # main + public + fuller jellyfin ensure declarr's sync_jellyseerr succeeds:
+          # - defaultPermissions must be dict (not int from declarr's jellyseerr-settings.json) so perms_to_int doesn't get int
+          # - username/email/password must exist (dummies ok) to avoid KeyError on del in sync_jellyseerr
+          #   (they are removed before writing the final seerr settings.json)
+          # - public.initialized avoids re-running first-time wizard
+          # declarr's deep_merge(user_prio, its_default) + perms conversion + library id gen + profileId lookup will fill the rest.
+          # radarr/sonarr links are the key auto-wiring provided here.
+          main = {
+            defaultPermissions = {
+              autoApprove = true;
+              autoApprove4k = true;
+              autoRequest = true;
+              request = true;
+              request4k = true;
+            };
+          };
+          # public = {
+          #   initialized = false;
+          # };
+          jellyfin = {
+            ip = "jellyfin";
+            username = "admin";
+            email = "admin@example.com";
+            password = "admin";
+          };
+          sonarr = lib.optionals (hs.sonarr.enabled or false) [
+            {
+              # Fields for declarr's fix() (which does quality profile ID lookup via *arr API from the host)
+              # + fields for the final Seerr settings.json (seerr container will reach sonarr via the public
+              # HTTPS URL through SWAG, since declarr host cannot use docker-internal hostnames).
+              # Adapted from declarr repo's example jellyseerr configs.
+              activeDirectory = "/tv";
+              activeProfileName = "1080p Balanced";
+              animeTags = [];
+              apiKey = sonarrApiKey;
+              baseUrl = "";
+              enableSeasonFolders = true;
+              externalUrl = let
+                u = externalUrlFor sonarrSub;
+              in
+                if u != null
+                then u
+                else "";
+              hostname =
+                if domain != null
+                then "${sonarrSub}.${domain}"
+                else "sonarr";
+              id = 0;
+              is4k = false;
+              isDefault = true;
+              name = "sonarr";
+              port =
+                if domain != null
+                then 443
+                else 8989;
+              preventSearch = false;
+              syncEnabled = true;
+              tagRequests = false;
+              tags = [];
+              useSsl = domain != null;
+              # placeholders overwritten by declarr during sync (fix() does the /api/v3/qualityprofile lookup)
+              activeProfileId = 0;
+              activeServerId = 0;
+            }
+          ];
+          radarr = lib.optionals (hs.radarr.enabled or false) [
+            {
+              activeDirectory = "/movies";
+              activeProfileName = "1080p Balanced";
+              apiKey = radarrApiKey;
+              baseUrl = "";
+              externalUrl = let
+                u = externalUrlFor radarrSub;
+              in
+                if u != null
+                then u
+                else "";
+              hostname =
+                if domain != null
+                then "${radarrSub}.${domain}"
+                else "radarr";
+              id = 0;
+              is4k = false;
+              isDefault = true;
+              minimumAvailability = "inCinemas";
+              name = "radarr";
+              port =
+                if domain != null
+                then 443
+                else 7878;
+              preventSearch = false;
+              syncEnabled = true;
+              tagRequests = false;
+              tags = [];
+              useSsl = domain != null;
+              activeProfileId = 0;
+              activeServerId = 0;
+            }
+          ];
+        };
+      };
 
       fullConfig = recursiveUpdate arrConfig (cfg.extraConfig or {});
 
@@ -641,8 +642,13 @@
         (lib.neo.mkActivationScriptForDir config {dirPath = appdata;})
         (lib.neo.mkActivationScriptForDir config {dirPath = cfg.stateDir;})
         (lib.neo.mkActivationScriptForFile config {
-          filePath = configFile;
+          filePath = arrConfigFile;
           content = builtins.toJSON fullConfig;
+          mode = "0644";
+        })
+        (lib.neo.mkActivationScriptForFile config {
+          filePath = seerrConfigFile;
+          content = builtins.toJSON seerrConfig;
           mode = "0644";
         })
       ];
@@ -663,25 +669,61 @@
           wants = ["docker.service"];
           wantedBy = ["multi-user.target"];
           inherit preStart;
-          serviceConfig =
-            {
-              Type = "oneshot";
-              RemainAfterExit = true;
-              User = "root";
-              Restart = "on-failure";
-              RestartSec = 5;
-              StartLimitBurst = 3;
-              StartLimitIntervalSec = 300;
-            }
-            // lib.optionalAttrs (hs.seerr.enabled or false) {
-              ExecStartPost = ''
-                ${pkgs.systemd}/bin/systemctl restart --no-block docker-seerr.service --no-block
-              '';
-            };
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            User = "root";
+            Restart = "on-failure";
+            RestartSec = 5;
+            StartLimitBurst = 3;
+            StartLimitIntervalSec = 300;
+          };
           script = ''
             echo "Running declarr sync for high_sea *arr stack..."
-            ${declarrPkg}/bin/declarr --sync ${configFile}
+            ${declarrPkg}/bin/declarr --sync ${arrConfigFile}
             echo "declarr sync complete."
+          '';
+        };
+        systemd.services.declarr-seerr = lib.mkIf hs.seerr.enabled {
+          after =
+            (optionals (config.neo.services.swag.enabled or false) ["docker-swag.service"])
+            ++ (optionals hs.sonarr.enabled ["docker-sonarr.service"])
+            ++ (optionals hs.radarr.enabled ["docker-radarr.service"])
+            ++ (optionals hs.prowlarr.enabled ["docker-prowlarr.service"])
+            ++ (optionals hs.qbittorrent.enabled ["docker-qbittorrent.service"])
+            ++ (optionals (hs.jellyfin.enabled or false) ["docker-jellyfin.service"]);
+          wants = ["docker.service"];
+          wantedBy = ["multi-user.target"];
+          inherit preStart;
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            User = "root";
+            Restart = "on-failure";
+            RestartSec = 5;
+            StartLimitBurst = 3;
+            StartLimitIntervalSec = 300;
+            ExecStartPost = ''
+              ${pkgs.systemd}/bin/systemctl restart docker-seerr.service --no-block
+            '';
+          };
+          script = ''
+            SETTINGS_FILE="${config.neo.core.volumes.appdata}/seerr/config/settings.json"
+
+            while [ ! -f "$SETTINGS_FILE" ]; do
+              echo "Seerr settings file not found at $SETTINGS_FILE — waiting 10 seconds..."
+              sleep 10
+            done
+
+            MEDIA_SERVER_TYPE=$(${pkgs.jq}/bin/jq -r '.main.mediaServerType // "null"' "$SETTINGS_FILE" 2>/dev/null || echo "null")
+
+            if [ "$MEDIA_SERVER_TYPE" = "4" ]; then
+              echo "Running declarr sync for high_sea seerr docker container"
+              ${declarrPkg}/bin/declarr --sync ${seerrConfigFile}
+              echo "declarr sync complete."
+            else
+              echo "seerr already set up"
+            fi
           '';
         };
       };
