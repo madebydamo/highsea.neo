@@ -519,10 +519,16 @@
                 appProfileId = "Standard";
               };
             };
-            # Provide key (as null) so declarr's prowlarr sync doesn't KeyError on cfg["indexerProxy"].
-            # (declarr always does self.sync_contracts("/indexerProxy", self.cfg["indexerProxy"]) for prowlarr type,
-            # even if no proxies. User can populate via extraConfig or add FlareSolverr etc. if desired.)
-            indexerProxy = null;
+            indexerProxy = optionalAttrs hs.flaresolverr.enabled {
+              FlareSolverr = {
+                fields = {
+                  host = "http://flaresolverr:8191/";
+                  requestTimeout = 60;
+                };
+                implementation = "FlareSolverr";
+                tags = ["FlareSolverr"];
+              };
+            };
           };
         };
       seerrConfig = optionalAttrs (hs.seerr.enabled or false) {
