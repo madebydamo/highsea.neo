@@ -23,9 +23,6 @@
             dirPath = "${config.neo.core.volumes.appdata}/tdarr/logs";
           })
           (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/tdarr/temp";
-          })
-          (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.media}";
           })
         ];
@@ -52,7 +49,7 @@
             "${config.neo.core.volumes.appdata}/tdarr/config:/app/configs"
             "${config.neo.core.volumes.appdata}/tdarr/server:/app/server"
             "${config.neo.core.volumes.appdata}/tdarr/logs:/app/logs"
-            "${config.neo.core.volumes.appdata}/tdarr/temp:/temp"
+            "/tmp/tdarr-cache:/temp"
             "${config.neo.core.volumes.media}:/media"
           ];
           networks = ["internal"];
