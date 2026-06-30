@@ -63,6 +63,8 @@
             Downloads\ScanDirsV2=@Variant(\0\0\0\x1c\0\0\0\0)
             Downloads\TempPath=/downloads/incomplete/
             WebUI\Address=*
+            WebUI\CSRFProtection=false
+            WebUI\HostHeaderValidation=false
             WebUI\ServerDomains=*
             WebUI\Username=$u
             WebUI\Password_PBKDF2="@ByteArray($h)"
