@@ -51,6 +51,7 @@
               projectUrl = "https://www.qbittorrent.org/";
               githubUrl = "https://github.com/qbittorrent/qBittorrent";
               releaseUrl = "https://github.com/qbittorrent/qBittorrent/releases";
+              iframeCompatible = false;
             };
         };
         default = {};
