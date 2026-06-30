@@ -1,10 +1,6 @@
 # Qbittorrent service options.
 {...}: {
-  flake.modules.nixos.qbittorrent-option = {
-    config,
-    lib,
-    ...
-  }:
+  flake.modules.nixos.qbittorrent-option = {lib, ...}:
     with lib;
     with {inherit (lib.neo) mkOption mkEnableOption;}; {
       options.neo.services.qbittorrent = mkOption {

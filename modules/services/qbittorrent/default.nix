@@ -3,10 +3,12 @@
   flake.modules.nixos.qbittorrent = {
     config,
     lib,
+    pkgs,
     ...
   }:
     with lib; let
       cfg = config.neo.services.qbittorrent;
+      confPath = "${config.neo.core.volumes.appdata}/qbittorrent/config/qBittorrent/qBittorrent.conf";
     in {
       config = mkIf cfg.enabled {
         systemd.services.docker-qbittorrent.preStart = lib.concatStringsSep "\n" [
@@ -25,46 +27,51 @@
           (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/qbittorrent/config/qBittorrent";
           })
-          (lib.neo.mkActivationScriptForFile config {
-            filePath = "${config.neo.core.volumes.appdata}/qbittorrent/config/qBittorrent/qBittorrent.conf";
-            content = ''
-              [AutoRun]
-              enabled=false
-              program=
+          ''
+            pw=${escapeShellArg cfg.password}
+            u=${escapeShellArg cfg.username}
+            wp=${toString cfg.webPort}
+            lp=${toString cfg.listenPort}
+            h=$(${pkgs.python3}/bin/python3 ${./passwordhashing.py} "$pw")
+            cat << ACTEOF | sed "s/^[[:space:]]*//" > ${confPath}
+            [AutoRun]
+            enabled=false
+            program=
 
-              [BitTorrent]
-              Session\AddTorrentStopped=false
-              Session\DefaultSavePath=/downloads
-              Session\ExcludedFileNames=
-              Session\GlobalMaxInactiveSeedingMinutes=1440
-              Session\GlobalMaxRatio=1.5
-              Session\GlobalMaxSeedingMinutes=1440
-              Session\Port=${toString cfg.listenPort}
-              Session\QueueingSystemEnabled=true
-              Session\ShareLimitAction=Stop
-              Session\TempPath=/downloads/incomplete/
+            [BitTorrent]
+            Session\AddTorrentStopped=false
+            Session\DefaultSavePath=/downloads
+            Session\ExcludedFileNames=
+            Session\GlobalMaxInactiveSeedingMinutes=1440
+            Session\GlobalMaxRatio=1.5
+            Session\GlobalMaxSeedingMinutes=1440
+            Session\Port=$lp
+            Session\QueueingSystemEnabled=true
+            Session\ShareLimitAction=Stop
+            Session\TempPath=/downloads/incomplete/
 
-              [LegalNotice]
-              Accepted=true
+            [LegalNotice]
+            Accepted=true
 
-              [Preferences]
-              IPFilter\BannedIPs=
-              Connection\PortRange=${toString cfg.listenPort}
-              Connection\PortRangeMin=${toString cfg.listenPort}
-              Connection\UPnP=false
-              Downloads\DefaultSavePath=/downloads
-              Downloads\SavePath=/downloads
-              Downloads\ScanDirsV2=@Variant(\0\0\0\x1c\0\0\0\0)
-              Downloads\TempPath=/downloads/incomplete/
-              WebUI\Address=*
-              WebUI\ServerDomains=*
-              WebUI\Username=${cfg.username}
-              WebUI\Password_PBKDF2="@ByteArray(Q4HqfVHfF015316LHrpBtQ==:iKqHM6PlcnmWVtB16TGU5qMSB7gxfLFDxkmf0/B5thp8gT6fyb8V1jSwA34oKzws8EgBwLiYH9YUywIS06Dczg==)"
-              WebUI\Port=${toString cfg.webPort}
-              WebUI\LocalHostAuth=false
-            '';
-            mode = "0644";
-          })
+            [Preferences]
+            IPFilter\BannedIPs=
+            Connection\PortRange=$lp
+            Connection\PortRangeMin=$lp
+            Connection\UPnP=false
+            Downloads\DefaultSavePath=/downloads
+            Downloads\SavePath=/downloads
+            Downloads\ScanDirsV2=@Variant(\0\0\0\x1c\0\0\0\0)
+            Downloads\TempPath=/downloads/incomplete/
+            WebUI\Address=*
+            WebUI\ServerDomains=*
+            WebUI\Username=$u
+            WebUI\Password_PBKDF2="@ByteArray($h)"
+            WebUI\Port=$wp
+            WebUI\LocalHostAuth=false
+            ACTEOF
+            chown ${toString config.neo.core.uid}:${toString config.neo.core.gid} ${confPath}
+            chmod 0644 ${confPath}
+          ''
         ];
 
         virtualisation.oci-containers.containers.qbittorrent = {
