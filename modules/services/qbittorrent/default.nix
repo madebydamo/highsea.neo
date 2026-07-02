@@ -93,6 +93,18 @@
           ];
           networks = ["internal"];
         };
+        virtualisation.oci-containers.containers.portcheck = {
+          environment = {
+            QBITTORRENT_PORT = toString cfg.listenPort;
+            QBITTORRENT_WEBUI_PORT = toString cfg.webPort;
+            QBITTORRENT_WEBUI_HOST = "qbittorrent";
+            QBITTORRENT_USERNAME = cfg.username;
+            QBITTORRENT_PASSWORD = cfg.password;
+          };
+          image = cfg.containers.portcheck;
+          autoStart = true;
+          networks = ["internal"];
+        };
       };
     };
 }

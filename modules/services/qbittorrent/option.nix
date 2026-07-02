@@ -38,12 +38,13 @@
             }
             // neo.mkVpnOptions {
               enabled = true;
-              containers = ["qbittorrent"];
+              containers = ["qbittorrent" "portcheck"];
               networks = ["internal"];
               ports = [8082 8342];
             }
             // lib.neo.mkContainerDefinitions {
               qbittorrent = "lscr.io/linuxserver/qbittorrent:latest";
+              portcheck = "eiqnepm/portcheck:latest";
             }
             // lib.neo.mkServiceMeta {
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/qbittorrent.svg";
