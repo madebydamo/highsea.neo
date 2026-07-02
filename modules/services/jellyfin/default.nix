@@ -30,7 +30,7 @@
             PGID = toString config.neo.core.gid;
             TZ = config.neo.core.timeZone;
           };
-          image = "lscr.io/linuxserver/jellyfin:latest";
+          image = cfg.containers.jellyfin;
           autoStart = true;
           devices = ["/dev/dri:/dev/dri"];
           volumes = [

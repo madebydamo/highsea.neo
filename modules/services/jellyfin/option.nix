@@ -17,6 +17,9 @@
               subdomain = "jellyfin";
               auth.available = false;
             }
+            // lib.neo.mkContainerDefinitions {
+              jellyfin = "lscr.io/linuxserver/jellyfin:latest";
+            }
             // lib.neo.mkServiceMeta {
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyfin.svg";
               description = ''

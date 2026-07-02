@@ -31,7 +31,7 @@
             TZ = config.neo.core.timeZone;
             RADARR__AUTH__APIKEY = cfg.apiKey;
           };
-          image = "lscr.io/linuxserver/radarr:latest";
+          image = cfg.containers.radarr;
           autoStart = true;
           volumes = [
             "${config.neo.core.volumes.appdata}/radarr/config:/config"

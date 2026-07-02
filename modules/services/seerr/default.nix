@@ -39,7 +39,7 @@
             LOG_LEVEL = "debug";
             PORT = "5055";
           };
-          image = "ghcr.io/seerr-team/seerr:latest";
+          image = cfg.containers.seerr;
           autoStart = true;
           volumes = [
             "${config.neo.core.volumes.appdata}/seerr/config:/app/config"

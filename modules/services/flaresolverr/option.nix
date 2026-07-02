@@ -19,6 +19,9 @@
               networks = ["internal"];
               ports = [8191];
             }
+            // lib.neo.mkContainerDefinitions {
+              flaresolverr = "ghcr.io/flaresolverr/flaresolverr:latest";
+            }
             // lib.neo.mkServiceMeta {
               icon = "https://upload.wikimedia.org/wikipedia/commons/4/4b/Cloudflare_Logo.svg";
               description = ''

@@ -26,6 +26,9 @@
                 "^/ping"
               ];
             }
+            // lib.neo.mkContainerDefinitions {
+              radarr = "lscr.io/linuxserver/radarr:latest";
+            }
             // neo.mkVpnOptions {
               enabled = true;
               containers = ["radarr"];

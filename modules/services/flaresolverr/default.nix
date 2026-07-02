@@ -13,7 +13,7 @@
           environment = {
             TZ = config.neo.core.timeZone;
           };
-          image = "ghcr.io/flaresolverr/flaresolverr:latest";
+          image = cfg.containers.flaresolverr;
           autoStart = true;
           networks = ["internal"];
         };

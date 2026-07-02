@@ -25,7 +25,7 @@
             TZ = config.neo.core.timeZone;
             PROWLARR__AUTH__APIKEY = cfg.apiKey;
           };
-          image = "lscr.io/linuxserver/prowlarr:latest";
+          image = cfg.containers.prowlarr;
           autoStart = true;
           volumes = [
             "${config.neo.core.volumes.appdata}/prowlarr/config:/config"

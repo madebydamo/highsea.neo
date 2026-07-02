@@ -34,7 +34,7 @@
             TZ = config.neo.core.timeZone;
             BAZARR__AUTH__APIKEY = cfg.apiKey;
           };
-          image = "lscr.io/linuxserver/bazarr:latest";
+          image = cfg.containers.bazarr;
           autoStart = true;
           volumes = [
             "${config.neo.core.volumes.appdata}/bazarr/config:/config"

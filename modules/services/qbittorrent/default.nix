@@ -85,7 +85,7 @@
             WEBUI_PORT = toString cfg.webPort;
             TORRENTING_PORT = toString cfg.listenPort;
           };
-          image = "lscr.io/linuxserver/qbittorrent:latest";
+          image = cfg.containers.qbittorrent;
           autoStart = true;
           volumes = [
             "${config.neo.core.volumes.appdata}/qbittorrent/config:/config"

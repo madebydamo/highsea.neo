@@ -28,6 +28,9 @@
               networks = ["internal"];
               ports = [6767];
             }
+            // lib.neo.mkContainerDefinitions {
+              bazarr = "lscr.io/linuxserver/bazarr:latest";
+            }
             // lib.neo.mkServiceMeta {
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/bazarr.svg";
               description = ''

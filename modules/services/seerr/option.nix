@@ -20,6 +20,9 @@
                 "^/ping"
               ];
             }
+            // lib.neo.mkContainerDefinitions {
+              seerr = "ghcr.io/seerr-team/seerr:latest";
+            }
             // lib.neo.mkServiceMeta {
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyseerr.svg";
               description = ''

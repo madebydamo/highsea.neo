@@ -32,6 +32,9 @@
               networks = ["internal"];
               ports = [9696];
             }
+            // lib.neo.mkContainerDefinitions {
+              prowlarr = "lscr.io/linuxserver/prowlarr:latest";
+            }
             // lib.neo.mkServiceMeta {
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/prowlarr.svg";
               description = ''

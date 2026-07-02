@@ -26,6 +26,10 @@
                 rank = 20;
               };
             }
+            // lib.neo.mkSystemdUnits [
+              "declarr"
+              "declarr-seerr"
+            ]
             // lib.neo.mkServiceMeta {
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/declarr.svg";
               description = ''
@@ -43,4 +47,3 @@
       };
     };
 }
-
