@@ -36,6 +36,7 @@
           volumes = [
             "${config.neo.core.volumes.appdata}/jellyfin/config:/config"
             "${config.neo.core.volumes.appdata}/jellyfin/cache:/cache"
+            "/tmp/jellyfin-cache/transcodes:/config/cache/transcodes"
             "${config.neo.core.volumes.media}:/media"
           ];
           networks = ["host"];
