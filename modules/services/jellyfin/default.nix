@@ -22,6 +22,9 @@
           (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/jellyfin/cache";
           })
+          (lib.neo.mkActivationScriptForDir config {
+            dirPath = "/tmp/jellyfin-cache/transcodes";
+          })
         ];
 
         virtualisation.oci-containers.containers.jellyfin = {
