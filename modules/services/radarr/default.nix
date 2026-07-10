@@ -9,6 +9,13 @@
       cfg = config.neo.services.radarr;
     in {
       config = mkIf cfg.enabled {
+        assertions = [
+          {
+            assertion = cfg.apiKey != null;
+            message = "neo.services.radarr: apiKey must be set when the service is enabled.";
+          }
+        ];
+
         systemd.services.docker-radarr.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.media}/Movies";

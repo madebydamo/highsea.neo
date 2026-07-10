@@ -9,6 +9,13 @@
       cfg = config.neo.services.prowlarr;
     in {
       config = mkIf cfg.enabled {
+        assertions = [
+          {
+            assertion = cfg.apiKey != null;
+            message = "neo.services.prowlarr: apiKey must be set when the service is enabled.";
+          }
+        ];
+
         systemd.services.docker-prowlarr.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.appdata}/prowlarr";

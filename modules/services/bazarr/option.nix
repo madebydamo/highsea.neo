@@ -13,10 +13,11 @@
             {
               enabled = mkEnableOption "bazarr service" {rank = 0;};
               apiKey = mkOption {
-                type = types.str;
-                default = "bazarrapikey1234567890abcdefghij";
+                type = types.nullOr types.str;
+                default = null;
                 description = "Stable API key for Bazarr (enables declarr auto-configuration compatibility; overridable)";
                 rank = 5;
+                helper = lib.neo.helpers.randomToken;
               };
             }
             // neo.mkReverseProxyOptions {

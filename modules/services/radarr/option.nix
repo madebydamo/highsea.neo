@@ -13,9 +13,10 @@
             {
               enabled = mkEnableOption "radarr service" {rank = 0;};
               apiKey = mkOption {
-                type = types.str;
-                default = "radarrapikey1234567890abcdefghij";
+                type = types.nullOr types.str;
+                default = null;
                 description = "Stable API key for Radarr (enables declarr auto-configuration compatibility; overridable)";
+                helper = lib.neo.helpers.randomToken;
                 rank = 5;
               };
             }

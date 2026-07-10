@@ -9,6 +9,13 @@
       cfg = config.neo.services.sonarr;
     in {
       config = mkIf cfg.enabled {
+        assertions = [
+          {
+            assertion = cfg.apiKey != null;
+            message = "neo.services.sonarr: apiKey must be set when the service is enabled.";
+          }
+        ];
+
         systemd.services.docker-sonarr.preStart = lib.concatStringsSep "\n" [
           (lib.neo.mkActivationScriptForDir config {
             dirPath = "${config.neo.core.volumes.data}/Downloads";

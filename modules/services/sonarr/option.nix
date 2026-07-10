@@ -13,9 +13,10 @@
             {
               enabled = mkEnableOption "sonarr service" {rank = 0;};
               apiKey = mkOption {
-                type = types.str;
-                default = "sonarrapikey1234567890abcdefghij";
+                type = types.nullOr types.str;
+                default = null;
                 description = "Stable API key for Sonarr (enables declarr auto-configuration compatibility; overridable)";
+                helper = lib.neo.helpers.randomToken;
                 rank = 5;
               };
             }
