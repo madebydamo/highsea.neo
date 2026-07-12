@@ -15,8 +15,9 @@
             }
             // neo.mkReverseProxyOptions {
               subdomain = "audiobookshelf";
-              # Audiobookshelf has multi-user auth; skip tinyauth in front.
-              auth.available = false;
+              auth.publicPaths = [
+                "^/audiobookshelf/api/"
+              ];
             }
             // lib.neo.mkContainerDefinitions {
               audiobookshelf = "ghcr.io/advplyr/audiobookshelf:latest";
