@@ -37,6 +37,7 @@
               prowlarr = "lscr.io/linuxserver/prowlarr:latest";
             }
             // lib.neo.mkServiceMeta {
+              category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/prowlarr.svg";
               description = ''
                 Prowlarr is an indexer manager/proxy built on the *arr .net/reactjs base stack to integrate with your various PVR apps. Prowlarr supports management of both Torrent Trackers and Usenet Indexers.

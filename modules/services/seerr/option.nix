@@ -24,6 +24,7 @@
               seerr = "ghcr.io/seerr-team/seerr:latest";
             }
             // lib.neo.mkServiceMeta {
+              category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyseerr.svg";
               description = ''
                 Seerr is a free and open source software application for managing requests for your media library. It is the current merged successor to Jellyseerr and Overseerr (Jellyseerr/Overseerr merger project).

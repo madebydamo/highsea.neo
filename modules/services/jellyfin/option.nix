@@ -21,6 +21,7 @@
               jellyfin = "lscr.io/linuxserver/jellyfin:latest";
             }
             // lib.neo.mkServiceMeta {
+              category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyfin.svg";
               description = ''
                 Jellyfin is the volunteer-built media solution that puts you in control of your media. Stream to any device from your own server, with no strings attached.

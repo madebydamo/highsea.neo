@@ -47,6 +47,7 @@
               portcheck = "eiqnepm/portcheck:latest";
             }
             // lib.neo.mkServiceMeta {
+              category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/qbittorrent.svg";
               description = ''
                 qBittorrent is a bittorrent client programmed in C++ / Qt that uses libtorrent (sometimes called libtorrent-rasterbar) by Arvid Norberg.

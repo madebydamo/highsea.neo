@@ -34,6 +34,7 @@
               ports = [8989];
             }
             // lib.neo.mkServiceMeta {
+              category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/sonarr.svg";
               description = ''
                 Sonarr is a PVR for Usenet and BitTorrent users. It can monitor multiple RSS feeds for new episodes of your favorite shows and will interface with clients and indexers to grab, sort, and rename them.

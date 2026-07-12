@@ -31,6 +31,7 @@
               "declarr-seerr"
             ]
             // lib.neo.mkServiceMeta {
+              category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/declarr.svg";
               description = ''
                 declarr provides declarative configuration syncing for the *arr stack (sonarr, radarr, prowlarr, jellyfin, and jellyseerr).

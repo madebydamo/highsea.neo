@@ -30,6 +30,7 @@
               listenarr = "ghcr.io/listenarrs/listenarr:canary";
             }
             // lib.neo.mkServiceMeta {
+              category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/listenarr.svg";
               description = ''
                 Listenarr automates audiobook collection management similar to Sonarr or Radarr, but for audiobooks. It can search, download, and organize your library automatically using metadata from Audible and other sources.

@@ -23,6 +23,7 @@
               flaresolverr = "ghcr.io/flaresolverr/flaresolverr:latest";
             }
             // lib.neo.mkServiceMeta {
+              category = "Media";
               icon = "https://upload.wikimedia.org/wikipedia/commons/4/4b/Cloudflare_Logo.svg";
               description = ''
                 Flaresolverr is a proxy to bypass cloudflare bot protection. This can be used by prowlarr.
