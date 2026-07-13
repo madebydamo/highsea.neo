@@ -24,6 +24,7 @@
               subdomain = "prowlarr";
               auth.publicPaths = [
                 "^/api/"
+                "^/[0-9]+/api/"
                 "^/ping"
               ];
             }
