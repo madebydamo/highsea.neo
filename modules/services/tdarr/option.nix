@@ -22,6 +22,10 @@
               networks = ["internal"];
               ports = [8265];
             }
+            // lib.neo.mkContainerDefinitions {
+              tdarr = "ghcr.io/haveagitgat/tdarr:latest";
+            }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/tdarr"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://home.tdarr.io/static/media/logo3-min.246d6df44c7f16ddebaf.png";

@@ -20,6 +20,7 @@
             // lib.neo.mkContainerDefinitions {
               jellyfin = "lscr.io/linuxserver/jellyfin:latest";
             }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/jellyfin"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyfin.svg";

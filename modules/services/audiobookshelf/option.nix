@@ -22,6 +22,7 @@
             // lib.neo.mkContainerDefinitions {
               audiobookshelf = "ghcr.io/advplyr/audiobookshelf:latest";
             }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/audiobookshelf"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/audiobookshelf.svg";

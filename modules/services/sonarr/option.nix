@@ -33,6 +33,10 @@
               networks = ["internal"];
               ports = [8989];
             }
+            // lib.neo.mkContainerDefinitions {
+              sonarr = "lscr.io/linuxserver/sonarr:latest";
+            }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/sonarr"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/sonarr.svg";

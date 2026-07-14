@@ -1,6 +1,10 @@
 # Qbittorrent service options.
 {...}: {
-  flake.modules.nixos.qbittorrent-option = {lib, ...}:
+  flake.modules.nixos.qbittorrent-option = {
+    config,
+    lib,
+    ...
+  }:
     with lib;
     with {inherit (lib.neo) mkOption mkEnableOption;}; {
       options.neo.services.qbittorrent = mkOption {
@@ -46,6 +50,7 @@
               qbittorrent = "lscr.io/linuxserver/qbittorrent:latest";
               portcheck = "eiqnepm/portcheck:latest";
             }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/qbittorrent"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/qbittorrent.svg";

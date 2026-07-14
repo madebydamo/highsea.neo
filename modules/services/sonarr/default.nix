@@ -38,7 +38,7 @@
             TZ = config.neo.core.timeZone;
             SONARR__AUTH__APIKEY = cfg.apiKey;
           };
-          image = "lscr.io/linuxserver/sonarr:latest";
+          image = cfg.containers.sonarr;
           autoStart = true;
           volumes = [
             "${config.neo.core.volumes.appdata}/sonarr/config:/config"

@@ -29,6 +29,7 @@
             // lib.neo.mkContainerDefinitions {
               listenarr = "ghcr.io/listenarrs/listenarr:canary";
             }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/listenarr"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/listenarr.svg";

@@ -36,6 +36,7 @@
               networks = ["internal"];
               ports = [7878];
             }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/radarr"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/radarr.svg";

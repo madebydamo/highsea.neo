@@ -32,6 +32,7 @@
             // lib.neo.mkContainerDefinitions {
               bazarr = "lscr.io/linuxserver/bazarr:latest";
             }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/bazarr"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/bazarr.svg";

@@ -42,7 +42,7 @@
             nodeName = "TdarrNode";
             auth = "false";
           };
-          image = "ghcr.io/haveagitgat/tdarr:latest";
+          image = cfg.containers.tdarr;
           autoStart = true;
           devices = ["/dev/dri:/dev/dri"];
           volumes = [

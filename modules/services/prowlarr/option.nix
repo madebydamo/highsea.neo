@@ -37,6 +37,7 @@
             // lib.neo.mkContainerDefinitions {
               prowlarr = "lscr.io/linuxserver/prowlarr:latest";
             }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/prowlarr"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/prowlarr.svg";

@@ -23,6 +23,7 @@
             // lib.neo.mkContainerDefinitions {
               seerr = "ghcr.io/seerr-team/seerr:latest";
             }
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/seerr"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyseerr.svg";

@@ -30,6 +30,7 @@
               "declarr"
               "declarr-seerr"
             ]
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/declarr"
             // lib.neo.mkServiceMeta {
               category = "Media";
               icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/declarr.svg";
