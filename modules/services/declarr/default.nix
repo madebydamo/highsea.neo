@@ -21,6 +21,10 @@
         if (hs.radarr.enabled or false) && (hs.radarr.apiKey or null) != null
         then hs.radarr.apiKey
         else defaultApiKey;
+      lidarrApiKey =
+        if (hs.lidarr.enabled or false) && (hs.lidarr.apiKey or null) != null
+        then hs.lidarr.apiKey
+        else defaultApiKey;
       prowlarrApiKey =
         if (hs.prowlarr.enabled or false) && (hs.prowlarr.apiKey or null) != null
         then hs.prowlarr.apiKey
@@ -38,6 +42,7 @@
       domain = swag.domain or null;
       radarrSub = (hs.radarr or {}).subdomain or "radarr";
       sonarrSub = (hs.sonarr or {}).subdomain or "sonarr";
+      lidarrSub = (hs.lidarr or {}).subdomain or "lidarr";
       prowlarrSub = (hs.prowlarr or {}).subdomain or "prowlarr";
       seerrSub = (hs.seerr or {}).subdomain or "seerr";
       jellyfinSub = (hs.jellyfin or {}).subdomain or "jellyfin";
@@ -389,6 +394,107 @@
             };
           };
         }
+        // optionalAttrs hs.lidarr.enabled {
+          lidarr = {
+            declarr = {
+              type = "lidarr";
+              url = let
+                u = externalUrlFor lidarrSub;
+              in
+                if u != null
+                then u
+                else "http://lidarr:8686";
+            };
+            # Lidarr root folders require quality/metadata profile names (not path lists).
+            # "Standard" is Lidarr's built-in default for both profile types.
+            # customFormat/qualityProfile are not yet supported by declarr for lidarr.
+            rootFolder = {
+              Music = {
+                path = "/music";
+                defaultMetadataProfileId = "Standard";
+                defaultQualityProfileId = "Standard";
+                defaultMonitorOption = "all";
+                defaultNewItemMonitorOption = "all";
+                defaultTags = [];
+              };
+            };
+            downloadClient = optionalAttrs hs.qbittorrent.enabled {
+              qBittorrent = {
+                implementation = "QBittorrent";
+                fields = {
+                  host = "qbittorrent";
+                  port = 8082;
+                  username = qbitUser;
+                  password = qbitPass;
+                  sequentialOrder = true;
+                };
+              };
+            };
+            config = {
+              ui = {
+                firstDayOfWeek = 1;
+                theme = "dark";
+                timeFormat = "HH:mm";
+              };
+              host = {
+                apiKey = lidarrApiKey;
+                analyticsEnabled = false;
+                authenticationMethod = "external";
+                # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
+                # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr etc.
+                authenticationRequired = "DisabledForLocalAddresses";
+                backupInterval = 7;
+                backupRetention = 28;
+                port = 8686;
+                urlBase = "";
+                bindAddress = "*";
+                proxyEnabled = false;
+                sslCertPath = "";
+                sslCertPassword = "";
+                instanceName = "Lidarr";
+                branch = "master";
+                logLevel = "debug";
+                consoleLogLevel = "";
+                logSizeLimit = 1;
+                updateScriptPath = "";
+              };
+              naming = {
+                renameTracks = true;
+                replaceIllegalCharacters = true;
+                colonReplacementFormat = 4;
+                artistFolderFormat = "{Artist Name}";
+                standardTrackFormat = "{Album Title} ({Release Year})/{Artist Name} - {Album Title} - {track:00} - {Track Title}";
+                multiDiscTrackFormat = "{Album Title} ({Release Year})/{Medium Format} {medium:00}/{Artist Name} - {Album Title} - {track:00} - {Track Title}";
+                includeArtistName = false;
+                includeAlbumTitle = false;
+                includeQuality = false;
+                replaceSpaces = false;
+              };
+              mediamanagement = {
+                autoUnmonitorPreviouslyDownloadedEpisodes = false;
+                chmodFolder = "755";
+                chownGroup = "";
+                copyUsingHardlinks = true;
+                createEmptySeriesFolders = true;
+                deleteEmptyFolders = false;
+                downloadPropersAndRepacks = "preferAndUpgrade";
+                enableMediaInfo = true;
+                episodeTitleRequired = "always";
+                extraFileExtensions = "srt";
+                fileDate = "none";
+                importExtraFiles = false;
+                minimumFreeSpaceWhenImporting = 100;
+                recycleBin = "";
+                recycleBinCleanupDays = 7;
+                rescanAfterRefresh = "always";
+                scriptImportPath = "";
+                setPermissionsLinux = false;
+                skipFreeSpaceCheckWhenImporting = false;
+                useScriptImport = false;
+              };
+            };
+          };
+        }
         // optionalAttrs hs.prowlarr.enabled {
           prowlarr = {
             declarr = {
@@ -481,6 +587,17 @@
                     prowlarrUrl = "http://prowlarr:9696";
                     baseUrl = "http://radarr:7878";
                     apiKey = radarrApiKey;
+                  };
+                };
+              })
+              // (optionalAttrs hs.lidarr.enabled {
+                Lidarr = {
+                  syncLevel = "fullSync";
+                  implementation = "Lidarr";
+                  fields = {
+                    prowlarrUrl = "http://prowlarr:9696";
+                    baseUrl = "http://lidarr:8686";
+                    apiKey = lidarrApiKey;
                   };
                 };
               });
@@ -665,6 +782,7 @@
             (optionals (config.neo.services.swag.enabled or false) ["docker-swag.service"])
             ++ (optionals hs.sonarr.enabled ["docker-sonarr.service"])
             ++ (optionals hs.radarr.enabled ["docker-radarr.service"])
+            ++ (optionals hs.lidarr.enabled ["docker-lidarr.service"])
             ++ (optionals hs.prowlarr.enabled ["docker-prowlarr.service"])
             ++ (optionals hs.qbittorrent.enabled ["docker-qbittorrent.service"])
             ++ (optionals (hs.jellyfin.enabled or false) ["docker-jellyfin.service"]);
@@ -695,6 +813,7 @@
             (optionals (config.neo.services.swag.enabled or false) ["docker-swag.service"])
             ++ (optionals hs.sonarr.enabled ["docker-sonarr.service"])
             ++ (optionals hs.radarr.enabled ["docker-radarr.service"])
+            ++ (optionals hs.lidarr.enabled ["docker-lidarr.service"])
             ++ (optionals hs.prowlarr.enabled ["docker-prowlarr.service"])
             ++ (optionals hs.qbittorrent.enabled ["docker-qbittorrent.service"])
             ++ (optionals (hs.jellyfin.enabled or false) ["docker-jellyfin.service"]);
