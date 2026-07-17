@@ -39,7 +39,8 @@
               projectUrl = "https://getlistenarr.com/";
               githubUrl = "https://github.com/Listenarrs/Listenarr";
               releaseUrl = "https://github.com/Listenarrs/Listenarr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Listenarr service configuration";

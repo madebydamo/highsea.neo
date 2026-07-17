@@ -30,7 +30,8 @@
               '';
               githubUrl = "https://github.com/FlareSolverr/FlareSolverr";
               releaseUrl = "https://github.com/FlareSolverr/FlareSolverr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Flaresolverr service configuration";

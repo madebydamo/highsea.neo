@@ -33,7 +33,8 @@
               projectUrl = "https://docs.seerr.dev/";
               githubUrl = "https://github.com/seerr-team/seerr";
               releaseUrl = "https://github.com/seerr-team/seerr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Seerr service configuration";

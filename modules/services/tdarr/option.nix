@@ -35,7 +35,8 @@
               projectUrl = "https://tdarr.io/";
               githubUrl = "https://github.com/HaveAGitGat/Tdarr";
               releaseUrl = "https://github.com/HaveAGitGat/Tdarr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Tdarr service configuration";

@@ -47,7 +47,8 @@
               projectUrl = "https://lidarr.audio/";
               githubUrl = "https://github.com/Lidarr/Lidarr";
               releaseUrl = "https://github.com/Lidarr/Lidarr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Lidarr service configuration";

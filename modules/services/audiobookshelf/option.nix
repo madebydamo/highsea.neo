@@ -32,7 +32,8 @@
               projectUrl = "https://www.audiobookshelf.org/";
               githubUrl = "https://github.com/advplyr/audiobookshelf";
               releaseUrl = "https://github.com/advplyr/audiobookshelf/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Audiobookshelf service configuration";

@@ -42,7 +42,8 @@
               projectUrl = "https://www.bazarr.media/";
               githubUrl = "https://github.com/morpheus65535/bazarr";
               releaseUrl = "https://github.com/morpheus65535/bazarr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Bazarr service configuration";

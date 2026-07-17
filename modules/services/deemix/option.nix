@@ -35,7 +35,8 @@
               projectUrl = "https://github.com/bambanah/deemix";
               githubUrl = "https://github.com/bambanah/deemix";
               releaseUrl = "https://github.com/bambanah/deemix/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Deemix service configuration";

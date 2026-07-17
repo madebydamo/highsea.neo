@@ -42,7 +42,8 @@
               projectUrl = "https://github.com/upidapi/declarr";
               githubUrl = "https://github.com/upidapi/declarr";
               releaseUrl = "https://github.com/upidapi/declarr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "declarr service configuration for high_sea *arr auto-config";

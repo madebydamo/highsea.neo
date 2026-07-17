@@ -30,7 +30,8 @@
               projectUrl = "https://jellyfin.org/";
               githubUrl = "https://github.com/jellyfin/jellyfin";
               releaseUrl = "https://github.com/jellyfin/jellyfin/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Jellyfin service configuration";

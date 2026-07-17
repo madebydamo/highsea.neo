@@ -47,7 +47,8 @@
               projectUrl = "https://sonarr.tv/";
               githubUrl = "https://github.com/Sonarr/Sonarr";
               releaseUrl = "https://github.com/Sonarr/Sonarr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Sonarr service configuration";

@@ -48,7 +48,8 @@
               projectUrl = "https://prowlarr.com/";
               githubUrl = "https://github.com/Prowlarr/Prowlarr";
               releaseUrl = "https://github.com/Prowlarr/Prowlarr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Prowlarr service configuration";

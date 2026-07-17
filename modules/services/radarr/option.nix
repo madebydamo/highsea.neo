@@ -47,7 +47,8 @@
               projectUrl = "https://radarr.video/";
               githubUrl = "https://github.com/Radarr/Radarr";
               releaseUrl = "https://github.com/Radarr/Radarr/releases";
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Radarr service configuration";

@@ -62,7 +62,8 @@
               githubUrl = "https://github.com/qbittorrent/qBittorrent";
               releaseUrl = "https://github.com/qbittorrent/qBittorrent/releases";
               iframeCompatible = false;
-            };
+            }
+            // lib.neo.mkSkillOptions {};
         };
         default = {};
         description = "Qbittorrent service configuration";
