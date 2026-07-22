@@ -28,7 +28,7 @@
         ## Architecture notes
 
         - WebUI port **${webPort}**, torrent listen **${listenPort}** (gluetun publishes when VPN enabled).
-        - Companion container **portcheck** validates inbound port on VPN path.
+        - Host unit **qbittorrent-portcheck** dials the listen port from the container/VPN netns every 5m and restarts `docker-qbittorrent` when closed.
         - *arr apps talk to `qbittorrent:${webPort}` with Neo username/password (declarr).
         - Edge: tinyauth on public UI (no API publicPath) — WebAPI from Hermes via **cookie login**
           on public URL (after tinyauth is awkward) or **docker-network curl** to the container.
@@ -112,10 +112,10 @@
 
         ## Procedures
 
-        1. `systemctl status docker-qbittorrent docker-portcheck`
+        1. `systemctl status docker-qbittorrent qbittorrent-portcheck`
         2. WebAPI transfer/info + torrents list for stuck states (`error`, `missingFiles`, `stalledDL`)
         3. *arr import issues: category/save path must match Sonarr/Radarr remote paths
-        4. No peers / port closed → VPN + portcheck + listen port ${listenPort}
+        4. No peers / port closed → VPN + `journalctl -u qbittorrent-portcheck` + listen port ${listenPort}
 
         ## Pitfalls
 
@@ -127,7 +127,7 @@
 
         - Login returns `Ok.`
         - `app/version` prints version string
-        - portcheck logs show open listen port when VPN healthy
+        - `journalctl -u qbittorrent-portcheck` stays quiet when port open; restarts `docker-qbittorrent` when closed
       '';
     };
   };

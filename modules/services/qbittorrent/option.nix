@@ -42,13 +42,12 @@
             }
             // neo.mkVpnOptions {
               enabled = true;
-              containers = ["qbittorrent" "portcheck"];
+              containers = ["qbittorrent"];
               networks = ["internal"];
               ports = [8082 8342];
             }
             // lib.neo.mkContainerDefinitions {
               qbittorrent = "lscr.io/linuxserver/qbittorrent:latest";
-              portcheck = "eiqnepm/portcheck:latest";
             }
             // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/qbittorrent"
             // lib.neo.mkServiceMeta {
