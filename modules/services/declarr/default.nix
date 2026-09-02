@@ -609,8 +609,6 @@
                 priority = 30;
                 fields = {
                   definitionFile = "limetorrents";
-                  downloadlink = 1;
-                  downloadlink2 = 0;
                   "torrentBaseSettings.seedRatio" = 10;
                 };
                 appProfileId = "Standard";
