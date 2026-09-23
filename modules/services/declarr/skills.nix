@@ -76,6 +76,7 @@
 
         - Editing generated JSON by hand is wiped on next activate/preStart.
         - Running declarr while SWAG/domain wrong → connection failures to public URLs.
+        - *arr host config must include allowedHosts while authenticationRequired is DisabledForLocalAddresses. The module sets each app to its SWAG hostname, docker name, and localhost. A blank value makes the host PUT fail and declarr restart.
         - Seerr path only runs full sync when mediaServerType indicates uninitialized setup.
 
         ## Verification

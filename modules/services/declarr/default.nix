@@ -51,6 +51,18 @@
         then "https://${sub}.${domain}"
         else null;
 
+      # Servarr rejects PUT /config/host when authenticationRequired is not
+      # Enabled and allowedHosts is blank (follow-up to CVE-2026-30975).
+      # Declarr writes this block every sync, so a rejection fails the unit,
+      # restarts it, and re-tests FlareSolverr. Names are how this service is
+      # reached: the SWAG hostname (proxy and declarr send that Host header),
+      # the docker DNS name (other containers), and localhost. Not a setting.
+      allowedHostsFor = name: sub:
+        concatStringsSep "," (
+          optional (domain != null) "${sub}.${domain}"
+          ++ [name "localhost"]
+        );
+
       appdata = "${config.neo.core.volumes.appdata}/declarr";
       arrConfigFile = "${appdata}/config.json";
       seerrConfigFile = "${appdata}/seerr-config.json";
@@ -180,6 +192,7 @@
                 # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
                 # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr/seerr etc.
                 authenticationRequired = "DisabledForLocalAddresses";
+                allowedHosts = allowedHostsFor "sonarr" sonarrSub;
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 8989;
@@ -348,6 +361,7 @@
                 # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
                 # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr/seerr etc.
                 authenticationRequired = "DisabledForLocalAddresses";
+                allowedHosts = allowedHostsFor "radarr" radarrSub;
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 7878;
@@ -443,6 +457,7 @@
                 # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
                 # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr etc.
                 authenticationRequired = "DisabledForLocalAddresses";
+                allowedHosts = allowedHostsFor "lidarr" lidarrSub;
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 8686;
@@ -519,6 +534,7 @@
                 # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
                 # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr/seerr etc.
                 authenticationRequired = "DisabledForLocalAddresses";
+                allowedHosts = allowedHostsFor "prowlarr" prowlarrSub;
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 9696;
