@@ -33,15 +33,18 @@
 
         ## Credentials (API)
 
-        - **Neo**: `services.prowlarr.apiKey` → `PROWLARR__AUTH__APIKEY`
-        - Header: **`X-Api-Key`**
+        - **Neo setting**: `services.${name}.apiKey` (a secret; never print it or paste it into chat).
+        - The container gets it as `PROWLARR__AUTH__APIKEY`; header **`X-Api-Key`**.
+        - Call the API from inside the container, so the key never leaves it:
 
         ```bash
-        PROWLARR_KEY=$(docker exec prowlarr printenv PROWLARR__AUTH__APIKEY)
-        BASE="${publicUrl}"
-        H=(-H "X-Api-Key: $PROWLARR_KEY" -H "Accept: application/json")
-        curl -fsS "''${H[@]}" "$BASE/api/v1/system/status" | jq .
+        # arr URL [curl args]: curl inside ${name} with the API key
+        arr() { docker exec -i ${name} sh -c 'exec curl -fsS -H "X-Api-Key: $PROWLARR__AUTH__APIKEY" -H "Accept: application/json" -H "Content-Type: application/json" "$@"' _ "$@"; }
+        BASE=http://localhost:9696
+        arr "$BASE/api/v1/system/status" | jq .
         ```
+
+        Works with the VPN on or off (`docker exec` does not depend on the network).
 
         ## REST API (agent playbook)
 
@@ -61,22 +64,22 @@
         | Test indexer | `POST /api/v1/indexer/test` (body = indexer resource) |
 
         ```bash
-        curl -fsS "''${H[@]}" "$BASE/api/v1/indexer" | jq '[.[] | {id, name, enable, priority}]'
-        curl -fsS "''${H[@]}" "$BASE/api/v1/applications" | jq .
-        curl -fsS "''${H[@]}" --get "$BASE/api/v1/search" --data-urlencode "query=ubuntu"
+        arr "$BASE/api/v1/indexer" | jq '[.[] | {id, name, enable, priority}]'
+        arr "$BASE/api/v1/applications" | jq .
+        arr --get "$BASE/api/v1/search" --data-urlencode "query=ubuntu"
         ```
 
         ### Sync apps to Sonarr/Radarr/Lidarr
 
         After adding indexers in UI, use Prowlarr's sync (or declarr `applications` fullSync).
         API: application resources include `syncLevel` and target `apiKey`/`baseUrl`
-        (high_sea uses internal URLs like `http://sonarr:8989` for inter-container).
+        (high_sea uses container names like `http://${plugin.name "sonarr"}:8989`, reached over the indexers Docker link).
 
         ## Procedures
 
         1. `system/status` + `health`
         2. List indexers; test failing ones in UI or API
-        3. Cloudflare challenges → FlareSolverr (`/neo-flaresolverr`) + indexerProxy
+        3. Cloudflare challenges → FlareSolverr (`/neo-${plugin.name "flaresolverr"}`) + indexerProxy
         4. Apps missing → enable *arr + declarr sync
 
         ## Pitfalls
@@ -88,8 +91,8 @@
         ## Verification
 
         ```bash
-        curl -fsS "''${H[@]}" "$BASE/api/v1/system/status" | jq -r .version
-        curl -fsS "''${H[@]}" "$BASE/api/v1/indexer" | jq 'length'
+        arr "$BASE/api/v1/system/status" | jq -r .version
+        arr "$BASE/api/v1/indexer" | jq 'length'
         ```
       '';
     };

@@ -53,7 +53,7 @@
         1. Hit `$BASE/ping` and `$BASE/api` / swagger to discover versioned routes.
         2. Prefer UI for complex library adds until routes confirmed.
         3. For automation: list wanted items, trigger search commands if command API exists.
-        4. After downloads land in `/audiobooks`, scan Audiobookshelf (`/neo-audiobookshelf`).
+        4. After downloads land in `/audiobooks`, scan Audiobookshelf (`/neo-${plugin.name "audiobookshelf"}`).
 
         ## Procedures
 

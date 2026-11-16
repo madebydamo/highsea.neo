@@ -23,19 +23,18 @@
 
         ## Architecture notes
 
-        - **No public subdomain** by default — internal only for Prowlarr.
-        - Listen **8191**; declarr wires Prowlarr indexerProxy to `http://flaresolverr:8191/`.
-        - Often on VPN network with other download stack containers.
+        - **No public subdomain**: only Prowlarr reaches it, over the plugin's `cloudflare` Docker link.
+        - Listen **8191**; declarr wires Prowlarr's indexer proxy to `http://${name}:8191/`.
+        - VPN-routed by default (gluetun answers for its name on its networks).
 
         ## API (JSON POST)
 
         Docs: https://github.com/FlareSolverr/FlareSolverr
 
-        From Hermes (host), use docker network:
+        From Hermes (host), call it from Prowlarr's container (the only one that may reach it):
 
         ```bash
-        docker run --rm --network internal curlimages/curl:latest \
-          -fsS -X POST "http://flaresolverr:8191/v1" \
+        docker exec ${plugin.name "prowlarr"} curl -fsS -X POST "http://${name}:8191/v1" \
           -H "Content-Type: application/json" \
           -d '{"cmd":"request.get","url":"https://example.com","maxTimeout":60000}' | jq .
         ```
@@ -52,7 +51,7 @@
 
         ## Procedures
 
-        1. `systemctl status docker-flaresolverr` + logs
+        1. `systemctl status docker-${name}` + logs
         2. POST `/v1` test request
         3. In Prowlarr: Settings → Indexers → proxies → FlareSolverr host
         4. Tag indexers that need CF bypass

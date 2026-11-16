@@ -78,7 +78,7 @@
         1. Container health + logs
         2. API status/me before UI
         3. Missing books → confirm files under media Audiobooks + library path + scan
-        4. Pair with Listenarr (`/neo-listenarr`) if automation downloads into `/audiobooks`
+        4. Pair with Listenarr (`/neo-${plugin.name "listenarr"}`) if automation downloads into `/audiobooks`
 
         ## Pitfalls
 

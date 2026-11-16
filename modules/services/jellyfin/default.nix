@@ -1,4 +1,8 @@
 # Jellyfin service implementation.
+# On its own Docker network like every other app (not the host network): SWAG
+# reaches it as jellyfin:8096, other apps (Seerr) use its public URL. /dev/dri
+# works the same on a bridge network. LAN discovery (DLNA, 7359/udp) was never
+# open in the firewall, so nothing is lost.
 {...}: {
   neoPlugin.modules.jellyfin = {
     config,
@@ -32,7 +36,7 @@
             "${transcodes}:/config/cache/transcodes"
             "${config.neo.core.volumes.media}:/media"
           ];
-          networks = ["host"];
+          networks = [(lib.neo.docker.serviceNetwork name)];
         };
       };
     };

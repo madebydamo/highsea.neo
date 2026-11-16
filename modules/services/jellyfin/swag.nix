@@ -13,8 +13,8 @@
   in {
     config.neo.services.${name}.proxyConf = lib.mkDefault (lib.neo.mkSubdomainProxyConf {
       inherit config cfg;
-      # Jellyfin runs on the host network.
-      proxyPass = "http://host.docker.internal:8096";
+      upstream = name;
+      port = 8096;
     });
   };
 }

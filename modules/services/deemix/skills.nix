@@ -50,16 +50,16 @@
         3. Optional: inspect reverse-engineered endpoints only if present (`/api/*`) — probe carefully:
 
         ```bash
-        docker run --rm --network internal curlimages/curl:latest \
-          -fsS "http://deemix:6595/" -I
+        # SWAG sits on Deemix's network
+        docker exec swag curl -fsS -I "http://${name}:6595/"
         ```
 
         Prefer UI operations over fragile undocumented APIs. For library management after download,
-        use Lidarr (`/neo-lidarr`) if the collection is tracked there.
+        use Lidarr (`/neo-${plugin.name "lidarr"}`) if the collection is tracked there.
 
         ## Procedures
 
-        1. `systemctl status docker-deemix` + logs
+        1. `systemctl status docker-${name}` + logs
         2. Re-auth ARL if downloads fail with auth errors
         3. Disk permissions on Music volume (PUID/PGID = neo.core uid/gid)
         4. VPN health if outbound to Deezer fails

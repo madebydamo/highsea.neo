@@ -671,13 +671,12 @@
             port = 443;
             stateDir = "${config.neo.core.volumes.appdata}/${N.seerr}/config";
           };
-          # main + public + fuller jellyfin ensure declarr's sync_jellyseerr succeeds:
-          # - defaultPermissions must be dict (not int from declarr's jellyseerr-settings.json) so perms_to_int doesn't get int
-          # - username/email/password must exist (dummies ok) to avoid KeyError on del in sync_jellyseerr
-          #   (they are removed before writing the final seerr settings.json)
-          # - public.initialized avoids re-running first-time wizard
-          # declarr's deep_merge(user_prio, its_default) + perms conversion + library id gen + profileId lookup will fill the rest.
-          # radarr/sonarr links are the key auto-wiring provided here.
+          # declarr's sync_jellyseerr deletes jellyfin.{ip,username,email,password}
+          # before writing settings.json (they are only for its `--run` mode), so
+          # they must exist but carry nothing. port/useSsl/externalHostname stay
+          # and point Seerr at Jellyfin's public URL: Jellyfin and Seerr have no
+          # Docker link. defaultPermissions must be a dict (declarr turns it into
+          # Seerr's bit mask).
           main = {
             defaultPermissions = {
               autoApprove = true;
@@ -687,15 +686,21 @@
               request4k = true;
             };
           };
-          # public = {
-          #   initialized = false;
-          # };
-          jellyfin = {
-            ip = "jellyfin";
-            username = "admin";
-            email = "admin@example.com";
-            password = "admin";
-          };
+          jellyfin =
+            {
+              ip =
+                if domain != null
+                then "${jellyfinSub}.${domain}"
+                else "";
+              username = "";
+              email = "";
+              password = "";
+            }
+            // optionalAttrs (domain != null && on "jellyfin") {
+              port = 443;
+              useSsl = true;
+              externalHostname = "https://${jellyfinSub}.${domain}";
+            };
           sonarr = lib.optionals (on "sonarr") [
             {
               # Fields for declarr's fix() (which does quality profile ID lookup via *arr API from the host)

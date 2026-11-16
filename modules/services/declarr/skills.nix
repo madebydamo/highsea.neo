@@ -24,10 +24,10 @@
 
         ## What it is
 
-        Host **oneshot** systemd units (not a long-running HTTP API):
+        Host **setup** units (lib.neo.mkSetupService) (not a long-running HTTP API):
 
         - `declarr` — syncs Sonarr/Radarr/Lidarr/Prowlarr (+ qBittorrent client, indexers, apps)
-        - `declarr-seerr` — when Seerr enabled; waits for settings.json then syncs Jellyseerr-shaped config
+        - `${name}-seerr` — when Seerr enabled; waits for settings.json then syncs Jellyseerr-shaped config
 
         Generated JSON lives under appdata `declarr/` (`config.json`, `seerr-config.json`).
 
@@ -35,7 +35,8 @@
 
         - Reads enabled high_sea services and Neo **apiKey** / qBittorrent user+pass.
         - **declarr itself** talks to *arr over **public HTTPS** (host cannot resolve docker DNS).
-        - Inter-container URLs inside *arr config stay as `http://sonarr:8989` etc.
+        - Addresses it writes into the apps are container names (`http://${plugin.name "sonarr"}:8989`, `${plugin.name "qbittorrent"}`, `http://${plugin.name "flaresolverr"}:8191/`), reached over the plugin's Docker links.
+        - Both units are setup units: they retry until they succeed and show "done"; `${name}` runs again when one of the apps restarts.
         - Default fallback API key string exists in module only when keys null — production must set real keys.
 
         ## There is no query REST API
@@ -43,10 +44,10 @@
         Operate via systemd + logs + resulting *arr APIs:
 
         ```bash
-        systemctl status declarr declarr-seerr
-        systemctl start declarr
-        systemctl start declarr-seerr   # if seerr enabled
-        journalctl -u declarr -u declarr-seerr -b --no-pager
+        systemctl status ${name} ${name}-seerr
+        systemctl start ${name}
+        systemctl start ${name}-seerr   # if seerr enabled
+        journalctl -u ${name} -u ${name}-seerr -b --no-pager
         ls -la ${
           if (cfg.appdata or null) != null
           then cfg.appdata
@@ -56,23 +57,23 @@
 
         Then verify with service APIs:
 
-        - Sonarr/Radarr download clients → `/neo-sonarr` `/neo-radarr`
-        - Prowlarr applications → `/neo-prowlarr`
-        - Seerr settings radarr/sonarr → `/neo-seerr`
+        - Sonarr/Radarr download clients → `/neo-${plugin.name "sonarr"}` `/neo-${plugin.name "radarr"}`
+        - Prowlarr applications → `/neo-${plugin.name "prowlarr"}`
+        - Seerr settings radarr/sonarr → `/neo-${plugin.name "seerr"}`
 
         ## Credentials
 
         - Uses `services.{sonarr,radarr,lidarr,prowlarr}.apiKey`
-        - Uses `services.qbittorrent.username` / `password`
+        - Uses `services.${plugin.name "qbittorrent"}.username` / `password`
         - Jellyfin: UI user for declarr jellyfin block (see module) — not a Neo API key option
 
         ## Procedures
 
         1. Ensure target containers are up
-        2. `systemctl start declarr` and read journal for API errors (401 = bad key, TLS = domain)
-        3. For Seerr: ensure `settings.json` exists (first start creates it), then `declarr-seerr`
+        2. `systemctl start ${name}` and read journal for API errors (401 = bad key, TLS = domain)
+        3. For Seerr: ensure `settings.json` exists (first start creates it), then `${name}-seerr`
         4. After key rotation: activate Neo → re-run declarr units
-        5. Advanced overrides: `services.declarr.extraConfig` deep-merge (settings.toml)
+        5. Advanced overrides: `services.${name}.extraConfig` deep-merge (settings.toml)
 
         ## Pitfalls
 
@@ -83,7 +84,7 @@
 
         ## Verification
 
-        - `systemctl is-active declarr` (oneshot RemainAfterExit → active after success)
+        - `systemctl is-active ${name}` (RemainAfterExit → active after success)
         - Sonarr `GET /api/v3/downloadclient` shows qBittorrent
         - Prowlarr `GET /api/v1/applications` lists Sonarr/Radarr/Lidarr
       '';

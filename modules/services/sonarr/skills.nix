@@ -36,30 +36,28 @@
 
         ## Credentials (API)
 
-        - **Neo setting**: `services.sonarr.apiKey` (required when enabled; randomToken helper).
-        - Injected as env `SONARR__AUTH__APIKEY` into the container.
-        - Auth method: header **`X-Api-Key`** (also works as query `?apikey=` — prefer header).
-        - Do **not** invent keys. Load from settings; avoid pasting full keys into chat.
-
-        ### Load API key (Hermes terminal)
+        - **Neo setting**: `services.${name}.apiKey` (a secret; never print it or paste it into chat).
+        - The container gets it as `SONARR__AUTH__APIKEY`; header **`X-Api-Key`**.
+        - Call the API from inside the container, so the key never leaves it:
 
         ```bash
-        # Most reliable on the running host (never echo the key into chat):
-        SONARR_KEY=$(docker exec sonarr printenv SONARR__AUTH__APIKEY)
-        BASE="${publicUrl}"
-        # Alternatives: Neo UI → sonarr → apiKey, or services.sonarr.apiKey in /etc/neo/settings.toml
+        # arr URL [curl args]: curl inside ${name} with the API key
+        arr() { docker exec -i ${name} sh -c 'exec curl -fsS -H "X-Api-Key: $SONARR__AUTH__APIKEY" -H "Accept: application/json" -H "Content-Type: application/json" "$@"' _ "$@"; }
+        BASE=http://localhost:8989
+        arr "$BASE/api/v3/system/status" | jq .
         ```
+
+        Works with the VPN on or off (`docker exec` does not depend on the network).
 
         ## REST API (agent playbook)
 
-        Base: `${publicUrl}` · API prefix: `/api/v3` · Docs: https://sonarr.tv/docs/api/
+        Base: `$BASE` inside the container (public: `${publicUrl}`) · API prefix: `/api/v3` · Docs: https://sonarr.tv/docs/api/
 
         Auth every call:
 
         ```bash
-        H=(-H "X-Api-Key: $SONARR_KEY" -H "Accept: application/json")
-        curl -fsS "''${H[@]}" "$BASE/api/v3/system/status" | jq .
-        curl -fsS "''${H[@]}" "$BASE/ping"
+        arr "$BASE/api/v3/system/status" | jq .
+        arr "$BASE/ping"
         ```
 
         ### High-value read endpoints
@@ -88,20 +86,20 @@
 
         ```bash
         # Lookup series (before add)
-        curl -fsS "''${H[@]}" --get "$BASE/api/v3/series/lookup" --data-urlencode "term=Breaking Bad"
+        arr --get "$BASE/api/v3/series/lookup" --data-urlencode "term=Breaking Bad"
 
         # Command: refresh series, rescan, missing search, etc.
-        curl -fsS "''${H[@]}" -X POST "$BASE/api/v3/command" \
+        arr -X POST "$BASE/api/v3/command" \
           -H "Content-Type: application/json" \
           -d '{"name":"MissingEpisodeSearch"}'
 
         # Interactive episode search for one episode id
-        curl -fsS "''${H[@]}" -X POST "$BASE/api/v3/command" \
+        arr -X POST "$BASE/api/v3/command" \
           -H "Content-Type: application/json" \
           -d '{"name":"EpisodeSearch","episodeIds":[123]}'
 
         # Queue delete (remove from client optional)
-        # curl -fsS "''${H[@]}" -X DELETE "$BASE/api/v3/queue/{id}?removeFromClient=true&blocklist=false"
+        # arr -X DELETE "$BASE/api/v3/queue/{id}?removeFromClient=true&blocklist=false"
         ```
 
         ### Add series sketch
@@ -115,17 +113,17 @@
 
         ## Internal vs public URL
 
-        - **From Hermes (host)**: use `${publicUrl}` + `X-Api-Key` (publicPaths bypass tinyauth).
-        - **Container-to-container** (declarr/prowlarr): `http://sonarr:8989` on docker network.
-        - If public HTTPS fails but container is up: `docker logs sonarr --tail 100` and check SWAG.
+        - **From Hermes (host)**: `arr` above (inside the container), or `${publicUrl}` + `X-Api-Key` (publicPaths bypass tinyauth).
+        - **Other apps**: Prowlarr and Bazarr reach `http://${name}:8989` over the plugin's Docker links (indexers, subtitles); qBittorrent is `http://${plugin.name "qbittorrent"}:<webPort>` over the downloads link. declarr and Seerr use the public URL.
+        - If public HTTPS fails but container is up: `docker logs ${name} --tail 100` and check SWAG.
 
         ## Procedures
 
-        1. `systemctl status docker-sonarr` + derived cheatsheet
+        1. `systemctl status docker-${name}` + derived cheatsheet
         2. API `system/status` + `health` before deeper diagnosis
-        3. Stuck downloads: `queue` + qBittorrent skill (`/neo-qbittorrent`)
-        4. No grabs: Prowlarr indexers (`/neo-prowlarr`) + Sonarr `indexer` list
-        5. Config drift: if declarr enabled, re-run `systemctl start declarr` after *arr key/URL changes
+        3. Stuck downloads: `queue` + qBittorrent skill (`/neo-${plugin.name "qbittorrent"}`)
+        4. No grabs: Prowlarr indexers (`/neo-${plugin.name "prowlarr"}`) + Sonarr `indexer` list
+        5. Config drift: if declarr enabled, re-run `systemctl start ${plugin.name "declarr"}` after *arr key/URL changes
 
         ## Pitfalls
 
@@ -137,8 +135,8 @@
         ## Verification
 
         ```bash
-        curl -fsS "''${H[@]}" "$BASE/api/v3/system/status" | jq -r .version
-        curl -fsS "''${H[@]}" "$BASE/api/v3/series" | jq 'length'
+        arr "$BASE/api/v3/system/status" | jq -r .version
+        arr "$BASE/api/v3/series" | jq 'length'
         ```
       '';
     };

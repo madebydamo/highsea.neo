@@ -28,54 +28,34 @@
         ## Architecture notes
 
         - Mounts `/tv`, `/movies`, `/downloads` from high_sea media/download volumes.
-        - Must point at Sonarr/Radarr instances (API keys + URLs) inside Bazarr settings.
-        - Edge: tinyauth on UI. **No `/api/` publicPath by default** — external API calls
-          through SWAG may hit tinyauth unless you add publicPaths or use cookie auth.
-        - Prefer **in-network** access from Hermes when automating:
-
-        ```bash
-        # Reach bazarr on docker network (name: bazarr, port 6767)
-        docker run --rm --network internal curlimages/curl:latest \
-          -fsS -H "X-API-KEY: $BAZARR_KEY" "http://bazarr:6767/api/system/status"
-        ```
-
-        If VPN netns is used, the service may share gluetun's network — then use
-        public URL after logging through tinyauth, or `docker exec` diagnostics.
+        - Talks to Sonarr/Radarr at `http://${plugin.name "sonarr"}:8989` / `http://${plugin.name "radarr"}:7878` over the plugin's subtitles Docker link.
+        - Edge: tinyauth on the whole site (no publicPaths): call the API from inside the container.
 
         ## Credentials (API)
 
-        - **Neo**: `services.bazarr.apiKey` → env `BAZARR__AUTH__APIKEY`
-        - Header: **`X-API-KEY`** (Bazarr spelling; also try `X-Api-Key` if one fails)
-        - Sonarr/Radarr keys used *by* Bazarr are configured in Bazarr UI (or future declarr), not separate Neo options.
+        - **Neo**: `services.${name}.apiKey` (a secret; never print it or paste it into chat). Bazarr reads it from its `config/config.yaml` (`auth.apikey`).
+        - Header: **`X-API-KEY`**
 
         ```bash
-        BAZARR_KEY=$(docker exec bazarr printenv BAZARR__AUTH__APIKEY)
-        BASE="${publicUrl}"
+        # bz URL [curl args]: curl inside ${name}, key read there from config.yaml
+        bz() { docker exec -i ${name} sh -c 'k=$(sed -n "/^auth:/,/^[^ ]/s/^  apikey: *//p" /config/config/config.yaml | tr -d "\\042\\047"); exec curl -fsS -H "X-API-KEY: $k" "$@"' _ "$@"; }
+        BASE=http://localhost:6767
+        bz "$BASE/api/system/status" | jq .
         ```
 
         ## REST API (agent playbook)
 
-        Docs: https://bazarr.media/ — API browser often at `$BASE/api` when authenticated.
+        Docs: https://bazarr.media/ — API browser at `/api` in the UI.
         Common patterns (version may vary; probe with system status first):
 
         | Goal | Request |
         |------|---------|
-        | System | `GET /api/system/status` or `/api/system` |
+        | System | `GET /api/system/status` |
+        | Health | `GET /api/system/health` |
         | Series (from Sonarr) | `GET /api/series` |
         | Movies (from Radarr) | `GET /api/movies` |
-        | Episodes wanted | `GET /api/episodes` / wanted endpoints in API UI |
-        | Providers | `GET /api/providers` (if exposed) |
-        | History | `GET /api/history` |
+        | History | `GET /api/history/stats` |
         | Wanted | `GET /api/episodes/wanted`, `GET /api/movies/wanted` |
-
-        ```bash
-        # Prefer internal curl when public path is auth-walled:
-        KEY=$(docker exec bazarr printenv BAZARR__AUTH__APIKEY)
-        docker run --rm --network internal curlimages/curl:latest \
-          -fsS -H "X-API-KEY: $KEY" "http://bazarr:6767/api/system/statuses" || \
-        docker run --rm --network internal curlimages/curl:latest \
-          -fsS -H "X-API-KEY: $KEY" "http://bazarr:6767/api/system/status"
-        ```
 
         Open the Swagger/redoc in the Bazarr UI for exact paths on the installed version.
 
@@ -88,7 +68,7 @@
 
         ## Pitfalls
 
-        - Public HTTPS API without publicPaths → tinyauth 401/redirect (not a bad Bazarr key).
+        - The public URL answers API calls with the Neo login page (tinyauth), not a bad Bazarr key: use `bz`.
         - Sonarr/Radarr auth changes break Bazarr until reconfigured.
         - Subtitle providers rate-limit; don't hammer search APIs.
 
@@ -96,7 +76,7 @@
 
         - UI lists series/movies synced from *arr
         - Manual subtitle search succeeds for one episode
-        - API status returns 200 with API key (internal or public)
+        - `bz "$BASE/api/system/status"` returns 200
       '';
     };
   };

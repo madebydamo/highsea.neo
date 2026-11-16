@@ -17,7 +17,7 @@
             TZ = config.neo.core.timeZone;
             LOG_LEVEL = "info";
           };
-          networks = ["internal"];
+          networks = [(lib.neo.docker.serviceNetwork name)];
         };
       };
     };

@@ -32,7 +32,7 @@
             "${vols.media}/Audiobooks:/audiobooks"
             "${vols.data}/Downloads:/downloads"
           ];
-          networks = ["internal"];
+          networks = [(lib.neo.docker.serviceNetwork name)];
         };
       };
     };

@@ -92,7 +92,7 @@
               "${appdata}/config:/config"
               "${config.neo.core.volumes.data}/Downloads:/downloads"
             ];
-            networks = ["internal"];
+            networks = [(lib.neo.docker.serviceNetwork name)];
           };
 
           # Detects a closed torrent listen port (from inside the container/VPN

@@ -36,7 +36,7 @@
             // lib.neo.mkVpnOptions {
               enabled = true;
               containers = [name];
-              networks = ["internal"];
+              networks = [(lib.neo.docker.serviceNetwork name)];
               ports = [8686];
             }
             // lib.neo.mkContainerDefinitions {

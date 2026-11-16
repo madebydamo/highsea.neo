@@ -36,7 +36,7 @@
             "${appdata}/config:/config"
             "${music}:/downloads"
           ];
-          networks = ["internal"];
+          networks = [(lib.neo.docker.serviceNetwork name)];
         };
       };
     };

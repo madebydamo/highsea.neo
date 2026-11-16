@@ -28,7 +28,7 @@
         ## Architecture notes
 
         - Image: seerr (merged Jellyseerr/Overseerr line). Config under appdata `seerr/config`.
-        - **declarr-seerr** can pre-wire Sonarr/Radarr/Jellyfin when `services.declarr` is enabled.
+        - **${plugin.name "declarr"}-seerr** can pre-wire Sonarr/Radarr/Jellyfin when `services.${plugin.name "declarr"}` is enabled.
         - Edge: tinyauth UI; **`/api/` + `/ping` publicPaths** for API key clients.
         - Listens container port **5055**.
 
@@ -87,7 +87,7 @@
 
         ## Procedures
 
-        1. Container health; if first boot, wait for `settings.json` then declarr-seerr
+        1. Container health; if first boot, wait for `settings.json` then ${plugin.name "declarr"}-seerr
         2. API `status` + list Radarr/Sonarr settings — empty means wizard/declarr incomplete
         3. Request stuck → check Sonarr/Radarr queue skills + Seerr request status
         4. Jellyfin library not visible → Jellyfin API key/user perms in Seerr settings

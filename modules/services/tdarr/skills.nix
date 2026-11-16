@@ -31,14 +31,13 @@
         - `internalNode = true` — server runs a local node in-container.
         - Media mounted at `/media`; cache `/temp`.
         - Module sets `auth = "false"` for the container (edge tinyauth still gates public UI).
-        - No `/api/` publicPath — automate via tinyauth session (hard) or **docker network** to ports.
+        - No `/api/` publicPath: call it from SWAG's container, which sits on Tdarr's network.
 
         ```bash
         # Web UI base
         BASE="${publicUrl}"
         # Internal API-ish endpoints often on server port 8266
-        docker run --rm --network internal curlimages/curl:latest \
-          -fsS "http://tdarr:8266/api/v2/status" || true
+        docker exec swag curl -fsS "http://${name}:8265/api/v2/status" || true
         ```
 
         ## API notes
@@ -49,11 +48,11 @@
         ```bash
         # Common probes
         for p in \
-          "http://tdarr:8265/api/v2/status" \
-          "http://tdarr:8266/api/v2/status" \
-          "http://tdarr:8265/api/v2/cruddb" \
+          "http://${name}:8265/api/v2/status" \
+          "http://${name}:8266/api/v2/status" \
+          "http://${name}:8265/api/v2/cruddb" \
           ; do
-          docker run --rm --network internal curlimages/curl:latest -fsS -o /dev/null -w "%{http_code} $p\n" "$p" || echo "fail $p"
+          docker exec swag curl -fsS -o /dev/null -w "%{http_code} $p\n" "$p" || echo "fail $p"
         done
         ```
 
@@ -69,10 +68,10 @@
 
         ## Procedures
 
-        1. `systemctl status docker-tdarr` + logs
+        1. `systemctl status docker-${name}` + logs
         2. UI: nodes online, library paths under `/media/...`
         3. HW transcode failures → `ls -l /dev/dri`, container devices, ffmpeg logs
-        4. Disk: cache `/tmp/tdarr-cache` on host; free space matters
+        4. Disk: cache `/tmp/${name}-cache` on host; free space matters
 
         ## Pitfalls
 

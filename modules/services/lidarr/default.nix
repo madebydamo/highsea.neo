@@ -40,7 +40,7 @@
             "${vols.media}/Music:/music"
             "${vols.data}/Downloads:/downloads"
           ];
-          networks = ["internal"];
+          networks = [(lib.neo.docker.serviceNetwork name)];
         };
       };
     };

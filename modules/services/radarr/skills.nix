@@ -34,25 +34,26 @@
 
         ## Credentials (API)
 
-        - **Neo**: `services.radarr.apiKey` → env `RADARR__AUTH__APIKEY`
-        - Header: **`X-Api-Key`**
-        - Load key (do not dump into chat):
+        - **Neo setting**: `services.${name}.apiKey` (a secret; never print it or paste it into chat).
+        - The container gets it as `RADARR__AUTH__APIKEY`; header **`X-Api-Key`**.
+        - Call the API from inside the container, so the key never leaves it:
 
         ```bash
-        RADARR_KEY=$(docker exec radarr printenv RADARR__AUTH__APIKEY)
-        BASE="${publicUrl}"
-        H=(-H "X-Api-Key: $RADARR_KEY" -H "Accept: application/json")
+        # arr URL [curl args]: curl inside ${name} with the API key
+        arr() { docker exec -i ${name} sh -c 'exec curl -fsS -H "X-Api-Key: $RADARR__AUTH__APIKEY" -H "Accept: application/json" -H "Content-Type: application/json" "$@"' _ "$@"; }
+        BASE=http://localhost:7878
+        arr "$BASE/api/v3/system/status" | jq .
         ```
 
-        Or from `/etc/neo/settings.toml` → `services.radarr.apiKey`.
+        Works with the VPN on or off (`docker exec` does not depend on the network).
 
         ## REST API (agent playbook)
 
-        Base: `${publicUrl}` · prefix `/api/v3` · Docs: https://radarr.video/docs/api/
+        Base: `$BASE` inside the container (public: `${publicUrl}`) · prefix `/api/v3` · Docs: https://radarr.video/docs/api/
 
         ```bash
-        curl -fsS "''${H[@]}" "$BASE/api/v3/system/status" | jq .
-        curl -fsS "''${H[@]}" "$BASE/ping"
+        arr "$BASE/api/v3/system/status" | jq .
+        arr "$BASE/ping"
         ```
 
         ### High-value endpoints
@@ -80,17 +81,17 @@
 
         ```bash
         # Missing movies search
-        curl -fsS "''${H[@]}" -X POST "$BASE/api/v3/command" \
+        arr -X POST "$BASE/api/v3/command" \
           -H "Content-Type: application/json" \
           -d '{"name":"MissingMoviesSearch"}'
 
         # Search one movie
-        curl -fsS "''${H[@]}" -X POST "$BASE/api/v3/command" \
+        arr -X POST "$BASE/api/v3/command" \
           -H "Content-Type: application/json" \
           -d '{"name":"MoviesSearch","movieIds":[1]}'
 
         # Refresh movie metadata
-        curl -fsS "''${H[@]}" -X POST "$BASE/api/v3/command" \
+        arr -X POST "$BASE/api/v3/command" \
           -H "Content-Type: application/json" \
           -d '{"name":"RefreshMovie","movieIds":[1]}'
         ```
@@ -100,7 +101,7 @@
         1. Health-check container + `system/status`
         2. Queue stuck → inspect `queue` then qBittorrent
         3. No results → Prowlarr + `indexer` status
-        4. After API key change → activate + `systemctl start declarr` (and seerr path if used)
+        4. After API key change → activate + `systemctl start ${plugin.name "declarr"}` (and seerr path if used)
 
         ## Pitfalls
 
@@ -111,8 +112,8 @@
         ## Verification
 
         ```bash
-        curl -fsS "''${H[@]}" "$BASE/api/v3/system/status" | jq -r .version
-        curl -fsS "''${H[@]}" "$BASE/api/v3/movie" | jq 'length'
+        arr "$BASE/api/v3/system/status" | jq -r .version
+        arr "$BASE/api/v3/movie" | jq 'length'
         ```
       '';
     };

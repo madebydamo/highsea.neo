@@ -33,15 +33,18 @@
 
         ## Credentials (API)
 
-        - **Neo**: `services.lidarr.apiKey` → `LIDARR__AUTH__APIKEY`
-        - Header: **`X-Api-Key`**
+        - **Neo setting**: `services.${name}.apiKey` (a secret; never print it or paste it into chat).
+        - The container gets it as `LIDARR__AUTH__APIKEY`; header **`X-Api-Key`**.
+        - Call the API from inside the container, so the key never leaves it:
 
         ```bash
-        LIDARR_KEY=$(docker exec lidarr printenv LIDARR__AUTH__APIKEY)
-        BASE="${publicUrl}"
-        H=(-H "X-Api-Key: $LIDARR_KEY" -H "Accept: application/json")
-        curl -fsS "''${H[@]}" "$BASE/api/v1/system/status" | jq .
+        # arr URL [curl args]: curl inside ${name} with the API key
+        arr() { docker exec -i ${name} sh -c 'exec curl -fsS -H "X-Api-Key: $LIDARR__AUTH__APIKEY" -H "Accept: application/json" -H "Content-Type: application/json" "$@"' _ "$@"; }
+        BASE=http://localhost:8686
+        arr "$BASE/api/v1/system/status" | jq .
         ```
+
+        Works with the VPN on or off (`docker exec` does not depend on the network).
 
         ## REST API (agent playbook)
 
@@ -63,8 +66,8 @@
         | Commands | `POST /api/v1/command` JSON `{"name":"…"}` |
 
         ```bash
-        curl -fsS "''${H[@]}" --get "$BASE/api/v1/artist/lookup" --data-urlencode "term=Radiohead"
-        curl -fsS "''${H[@]}" -X POST "$BASE/api/v1/command" \
+        arr --get "$BASE/api/v1/artist/lookup" --data-urlencode "term=Radiohead"
+        arr -X POST "$BASE/api/v1/command" \
           -H "Content-Type: application/json" \
           -d '{"name":"MissingAlbumSearch"}'
         ```
@@ -73,8 +76,8 @@
 
         1. Container health + `system/status`
         2. Queue / wanted missing for backlog
-        3. Indexer issues → `/neo-prowlarr`
-        4. Download client → `/neo-qbittorrent`
+        3. Indexer issues → `/neo-${plugin.name "prowlarr"}`
+        4. Download client → `/neo-${plugin.name "qbittorrent"}`
 
         ## Pitfalls
 
@@ -85,8 +88,8 @@
         ## Verification
 
         ```bash
-        curl -fsS "''${H[@]}" "$BASE/api/v1/system/status" | jq -r .version
-        curl -fsS "''${H[@]}" "$BASE/api/v1/artist" | jq 'length'
+        arr "$BASE/api/v1/system/status" | jq -r .version
+        arr "$BASE/api/v1/artist" | jq 'length'
         ```
       '';
     };

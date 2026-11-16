@@ -28,7 +28,8 @@
 
         ## Architecture notes
 
-        - Container uses **host network** (not only `internal`) for discovery/DLNA-friendly binding.
+        - Container `${name}` on its own Docker network (`app-${name}`, port 8096); SWAG proxies it. No DLNA/auto-discovery: clients enter the public URL. Seerr reaches it through the public URL too.
+        - `/metrics` (with monitoring on) is only for the monitoring agent; SWAG answers 404 there.
         - Media: host media volume → `/media` in container (see Live config / Neo volumes).
         - **tinyauth disabled** for this service (`auth.available = false`) — Jellyfin owns auth for clients.
         - declarr can configure plugins/libraries when enabled (Jellyfin user API key still app-created).
@@ -100,11 +101,11 @@
 
         ## Procedures
 
-        1. `systemctl status docker-jellyfin` + `docker logs jellyfin --tail 100`
+        1. `systemctl status docker-${name}` + `docker logs ${name} --tail 100`
         2. API `System/Info` before UI deep-dives
         3. Playback/transcode: check Sessions + `/dev/dri` + logs for ffmpeg errors
         4. Empty libraries: path under `/media/...` must match VirtualFolders
-        5. Seerr integration: Seerr needs Jellyfin URL + admin credentials/API (see `/neo-seerr`)
+        5. Seerr integration: Seerr needs Jellyfin URL + admin credentials/API (see `/neo-${plugin.name "seerr"}`)
 
         ## Pitfalls
 

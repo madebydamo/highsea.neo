@@ -36,7 +36,7 @@
             "${media}/Audiobooks:/audiobooks"
             "${media}/Podcasts:/podcasts"
           ];
-          networks = ["internal"];
+          networks = [(lib.neo.docker.serviceNetwork name)];
         };
       };
     };

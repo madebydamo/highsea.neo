@@ -44,7 +44,7 @@
             "/tmp/${name}-cache:/temp"
             "${config.neo.core.volumes.media}:/media"
           ];
-          networks = ["internal"];
+          networks = [(lib.neo.docker.serviceNetwork name)];
         };
       };
     };

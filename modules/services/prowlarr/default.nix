@@ -35,7 +35,7 @@
           volumes = [
             "${appdata}/config:/config"
           ];
-          networks = ["internal"];
+          networks = [(lib.neo.docker.serviceNetwork name)];
         };
       };
     };
