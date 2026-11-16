@@ -4,7 +4,8 @@ import hashlib
 import base64
 import uuid
 
-password = sys.argv[1]
+# The password comes on stdin (never argv: other users can read that).
+password = sys.stdin.read().rstrip("\n")
 salt = uuid.uuid4()
 salt_bytes = salt.bytes
 

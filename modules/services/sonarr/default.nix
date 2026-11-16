@@ -13,12 +13,7 @@
       vols = config.neo.core.volumes;
     in {
       config = mkIf cfg.enabled {
-        assertions = [
-          {
-            assertion = cfg.apiKey != null;
-            message = "neo.services.${name}: set the API key (use Generate).";
-          }
-        ];
+        assertions = lib.neo.requireSecrets name cfg ["apiKey"];
 
         systemd.services."docker-${name}".preStart = lib.neo.mkEnsureDirs config [
           "${vols.data}/Downloads"
@@ -27,12 +22,14 @@
           "${appdata}/config"
         ];
 
+        # The API key reaches the container through a rendered env file.
+        neo.core.secrets.containerEnv.${name}.SONARR__AUTH__APIKEY = cfg.apiKey;
+
         virtualisation.oci-containers.containers.${name} = {
           image = cfg.containers.${name};
           environment =
             lib.neo.linuxserverEnv config
             // {
-              SONARR__AUTH__APIKEY = cfg.apiKey;
               SONARR__LOG__LEVEL = "info";
             };
           volumes = [

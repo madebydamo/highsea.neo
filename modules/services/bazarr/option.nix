@@ -17,7 +17,7 @@
               enabled = mkEnableOption "Subtitles for your films and shows, downloaded automatically${plugin.label}" {rank = 0;};
               # Written into Bazarr's config.yaml by bazarr-setup; the
               # exporter uses the same key.
-              apiKey = mkOption {
+              apiKey = lib.neo.mkSecretOption {
                 type = types.nullOr types.str;
                 default = null;
                 description = "Key scripts and the monitoring use to talk to Bazarr. Changing it takes effect on the next start of Bazarr.";
@@ -37,6 +37,7 @@
             }
             // lib.neo.mkContainerDefinitions {
               ${name} = "lscr.io/linuxserver/bazarr:latest";
+              extraUnits = ["${name}-setup"];
             }
             // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/${name}"
             // lib.neo.mkServiceMeta {
@@ -47,8 +48,8 @@
                 Bazarr finds subtitles in the languages you choose for every film and episode in your library, and keeps looking for missing ones.
               '';
               notes = ''
-                Bazarr is reached only through the Neo login page; its API key is for the monitoring exporter and scripts.
-                Connect it to Sonarr and Radarr on its Settings page: use the names sonarr and radarr with ports 8989 and 7878 and their API keys.
+                Bazarr is reached only through the Neo login page; its API key is for the monitoring and scripts.
+                When Sonarr and Radarr are on, Neo connects Bazarr to them on every start; subtitle languages and providers are set on Bazarr's own page.
               '';
               privacy = [];
               projectUrl = "https://www.bazarr.media/";

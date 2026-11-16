@@ -12,24 +12,21 @@
       appdata = "${config.neo.core.volumes.appdata}/${name}";
     in {
       config = mkIf cfg.enabled {
-        assertions = [
-          {
-            assertion = cfg.apiKey != null;
-            message = "neo.services.${name}: set the API key (use Generate).";
-          }
-        ];
+        assertions = lib.neo.requireSecrets name cfg ["apiKey"];
 
         systemd.services."docker-${name}".preStart = lib.neo.mkEnsureDirs config [
           appdata
           "${appdata}/config"
         ];
 
+        # The API key reaches the container through a rendered env file.
+        neo.core.secrets.containerEnv.${name}.PROWLARR__AUTH__APIKEY = cfg.apiKey;
+
         virtualisation.oci-containers.containers.${name} = {
           image = cfg.containers.${name};
           environment =
             lib.neo.linuxserverEnv config
             // {
-              PROWLARR__AUTH__APIKEY = cfg.apiKey;
               PROWLARR__LOG__LEVEL = "info";
             };
           volumes = [

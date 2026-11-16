@@ -29,7 +29,7 @@
         - `declarr` — syncs Sonarr/Radarr/Lidarr/Prowlarr (+ qBittorrent client, indexers, apps)
         - `${name}-seerr` — when Seerr enabled; waits for settings.json then syncs Jellyseerr-shaped config
 
-        Generated JSON lives under appdata `declarr/` (`config.json`, `seerr-config.json`).
+        The generated JSON holds API keys and passwords: Neo renders it at activation into root-only files (`/run/neo-secrets/rendered/${name}-config.json`, `${name}-seerr-config.json`). Never print them.
 
         ## Architecture notes
 
@@ -37,7 +37,6 @@
         - **declarr itself** talks to *arr over **public HTTPS** (host cannot resolve docker DNS).
         - Addresses it writes into the apps are container names (`http://${plugin.name "sonarr"}:8989`, `${plugin.name "qbittorrent"}`, `http://${plugin.name "flaresolverr"}:8191/`), reached over the plugin's Docker links.
         - Both units are setup units: they retry until they succeed and show "done"; `${name}` runs again when one of the apps restarts.
-        - Default fallback API key string exists in module only when keys null — production must set real keys.
 
         ## There is no query REST API
 

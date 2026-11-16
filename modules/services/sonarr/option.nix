@@ -17,7 +17,7 @@
               enabled = mkEnableOption "New episodes of your shows, downloaded automatically${plugin.label}" {rank = 0;};
               # Reaches the container as SONARR__AUTH__APIKEY; declarr and the
               # exporter use the same key.
-              apiKey = mkOption {
+              apiKey = lib.neo.mkSecretOption {
                 type = types.nullOr types.str;
                 default = null;
                 description = "Key the other media apps use to talk to Sonarr. Changing it is passed on to apps the media helper connects; apps you connected by hand need the new key.";

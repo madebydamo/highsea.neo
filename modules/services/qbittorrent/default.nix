@@ -15,6 +15,10 @@
       cfg = config.neo.services.${name};
       appdata = "${config.neo.core.volumes.appdata}/${name}";
       confPath = "${appdata}/config/qBittorrent/qBittorrent.conf";
+      hs = import ../../_lib.nix {inherit lib;};
+      # Rendered at activation (root only); preStart hashes it there.
+      passwordTemplate = "${name}-webui-password";
+      passwordFile = config.neo.core.secrets.templates.${passwordTemplate}.path;
     in {
       # Two copies behind the VPN share gluetun's ports: both are settings.
       # Outside mkIf: a definition of neo.services.<name> cannot depend on
@@ -22,6 +26,12 @@
       config = mkMerge [
         {neo.services.${name}.vpn.ports = [cfg.webPort cfg.listenPort];}
         (mkIf cfg.enabled {
+          neo.core.secrets.generated."${name}-password" = {};
+          neo.core.secrets.templates.${passwordTemplate} = {
+            content = hs.qbitPassword config name;
+            restartUnits = ["docker-${name}.service"];
+          };
+
           systemd.services."docker-${name}".preStart = lib.concatStringsSep "\n" [
             (lib.neo.mkEnsureDirs config [
               "${config.neo.core.volumes.data}/Downloads"
@@ -31,11 +41,10 @@
               "${appdata}/config/qBittorrent"
             ])
             ''
-              pw=${escapeShellArg cfg.password}
               u=${escapeShellArg cfg.username}
               wp=${toString cfg.webPort}
               lp=${toString cfg.listenPort}
-              h=$(${pkgs.python3}/bin/python3 ${./passwordhashing.py} "$pw")
+              h=$(${pkgs.python3}/bin/python3 ${./passwordhashing.py} < ${passwordFile})
               cat << ACTEOF | sed "s/^[[:space:]]*//" > ${confPath}
               [AutoRun]
               enabled=false
@@ -75,7 +84,7 @@
               WebUI\LocalHostAuth=false
               ACTEOF
               chown ${toString config.neo.core.uid}:${toString config.neo.core.gid} ${confPath}
-              chmod 0644 ${confPath}
+              chmod 0600 ${confPath}
             ''
           ];
 

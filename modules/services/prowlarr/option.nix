@@ -17,7 +17,7 @@
               enabled = mkEnableOption "One place for the sites your media apps search${plugin.label}" {rank = 0;};
               # Reaches the container as PROWLARR__AUTH__APIKEY; declarr and the
               # exporter use the same key.
-              apiKey = mkOption {
+              apiKey = lib.neo.mkSecretOption {
                 type = types.nullOr types.str;
                 default = null;
                 description = "Key the other media apps use to talk to Prowlarr. Changing it is passed on to apps the media helper connects; apps you connected by hand need the new key.";

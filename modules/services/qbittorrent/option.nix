@@ -22,10 +22,13 @@
                 rank = 5;
                 ui = lib.neo.ui.mkUi {label = "User name";};
               };
-              password = mkOption {
-                type = types.str;
-                default = "adminadmin";
-                description = "Password to sign in to qBittorrent's page with. The media apps use it too.";
+              # Empty: a password the machine generates, known only to the apps
+              # (Sonarr & co. through declarr, the monitoring exporter).
+              password = lib.neo.mkSecretOption {
+                type = types.nullOr types.str;
+                default = null;
+                description = "Password to sign in to qBittorrent's page with; the media apps use it too. Leave empty and Neo picks one only the apps know.";
+                helper = lib.neo.helpers.randomToken;
                 rank = 6;
               };
               webPort = mkOption {

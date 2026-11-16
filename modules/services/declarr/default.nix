@@ -20,15 +20,13 @@
       N = genAttrs ["sonarr" "radarr" "lidarr" "prowlarr" "qbittorrent" "flaresolverr" "seerr" "jellyfin"] plugin.name;
       on = s: (hs.${N.${s}} or {}).enabled or false;
       declarrPkg = inputs.declarr.packages.${pkgs.stdenv.hostPlatform.system}.declarr;
-      defaultApiKey = "d3c1arrh0m3s3rv3r4p1k3y32ch4rsabcd";
+      lib' = import ../../_lib.nix {inherit lib;};
       qbit = hs.${N.qbittorrent};
-      qbitUser = qbit.username or "admin";
-      qbitPass = qbit.password or "adminadmin";
-      qbitPort = qbit.webPort or 8082;
-      keyOf = s:
-        if on s && (hs.${N.${s}}.apiKey or null) != null
-        then hs.${N.${s}}.apiKey
-        else defaultApiKey;
+      qbitUser = qbit.username;
+      qbitPass = lib'.qbitPassword config N.qbittorrent;
+      qbitPort = qbit.webPort;
+      # Only read for enabled apps, whose modules assert the key is set.
+      keyOf = s: hs.${N.${s}}.apiKey;
       sonarrApiKey = keyOf "sonarr";
       radarrApiKey = keyOf "radarr";
       lidarrApiKey = keyOf "lidarr";
@@ -64,8 +62,15 @@
         );
 
       appdata = "${config.neo.core.volumes.appdata}/${name}";
-      arrConfigFile = "${appdata}/config.json";
-      seerrConfigFile = "${appdata}/seerr-config.json";
+      # Rendered at activation with the API keys and the qBittorrent password
+      # filled in (root only, never in the store on an encrypted config).
+      arrTemplate = "${name}-config.json";
+      seerrTemplate = "${name}-seerr-config.json";
+      arrConfigFile = config.neo.core.secrets.templates.${arrTemplate}.path;
+      seerrConfigFile = config.neo.core.secrets.templates.${seerrTemplate}.path;
+      secretValues =
+        map keyOf (filter on ["sonarr" "radarr" "lidarr" "prowlarr"])
+        ++ optional (on "qbittorrent") qbitPass;
 
       arrConfig =
         {
@@ -785,24 +790,27 @@
       arrContainers = filter on ["sonarr" "radarr" "lidarr" "prowlarr" "qbittorrent"];
       swagAfter = optional (config.neo.services.swag.enabled or false) "docker-swag.service";
 
-      prepare = lib.concatStringsSep "\n" [
-        (lib.neo.mkEnsureDirs config [appdata cfg.stateDir])
-        (lib.neo.mkActivationScriptForFile config {
-          filePath = arrConfigFile;
-          content = builtins.toJSON fullConfig;
-          mode = "0600";
-        })
-        (lib.neo.mkActivationScriptForFile config {
-          filePath = seerrConfigFile;
-          content = builtins.toJSON seerrConfig;
-          mode = "0600";
-        })
-      ];
+      # Older versions kept the generated JSON, keys included, in appdata.
+      prepare = ''
+        ${lib.neo.mkEnsureDirs config [appdata cfg.stateDir]}
+        rm -f ${appdata}/config.json ${appdata}/seerr-config.json
+      '';
       seerrSettings = "${config.neo.core.volumes.appdata}/${N.seerr}/config/settings.json";
       # settings.json without the parts declarr regenerates on every run.
       settingsDigest = ''${pkgs.jq}/bin/jq -S 'del(.clientId)' "$SETTINGS_FILE" 2>/dev/null | sha256sum'';
     in {
       config = mkIf cfg.enabled {
+        neo.core.secrets.templates = {
+          ${arrTemplate} = {
+            content = lib'.secretJSON secretValues fullConfig;
+            restartUnits = ["${name}.service"];
+          };
+          ${seerrTemplate} = mkIf (on "seerr") {
+            content = lib'.secretJSON secretValues seerrConfig;
+            restartUnits = ["${name}-seerr.service"];
+          };
+        };
+
         systemd.services.${name} = lib.neo.mkSetupService {
           inherit pkgs name;
           description = "Configure the media apps${plugin.label} (declarr)";
