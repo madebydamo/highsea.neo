@@ -111,7 +111,7 @@
               {
                 PORT = "9707";
                 URL = "http://${name}:${toString port}";
-                LOG_LEVEL = "INFO";
+                LOG_LEVEL = "info";
               }
               // exporterEnv;
             networks = [(lib.neo.docker.serviceNetwork name)];
