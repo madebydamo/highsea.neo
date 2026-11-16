@@ -1,42 +1,36 @@
 # Listenarr service implementation.
 {...}: {
-  flake.modules.nixos.listenarr = {
+  neoPlugin.modules.listenarr = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib; let
-      cfg = config.neo.services.listenarr;
+      name = plugin.name "listenarr";
+      cfg = config.neo.services.${name};
+      appdata = "${config.neo.core.volumes.appdata}/${name}";
+      vols = config.neo.core.volumes;
     in {
       config = mkIf cfg.enabled {
-        systemd.services.docker-listenarr.preStart = lib.concatStringsSep "\n" [
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.data}/Downloads";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.media}/Audiobooks";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/listenarr";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/listenarr/config";
-          })
+        systemd.services."docker-${name}".preStart = lib.neo.mkEnsureDirs config [
+          "${vols.media}/Audiobooks"
+          "${vols.data}/Downloads"
+          appdata
+          "${appdata}/config"
         ];
 
-        virtualisation.oci-containers.containers.listenarr = {
-          environment = {
-            PUID = toString config.neo.core.uid;
-            PGID = toString config.neo.core.gid;
-            TZ = config.neo.core.timeZone;
-            UMASK = "022";
-          };
-          image = cfg.containers.listenarr;
-          autoStart = true;
+        virtualisation.oci-containers.containers.${name} = {
+          image = cfg.containers.${name};
+          environment =
+            lib.neo.linuxserverEnv config
+            // {
+              UMASK = "022";
+            };
           volumes = [
-            "${config.neo.core.volumes.appdata}/listenarr/config:/app/config"
-            "${config.neo.core.volumes.media}/Audiobooks:/audiobooks"
-            "${config.neo.core.volumes.data}/Downloads:/downloads"
+            "${appdata}/config:/app/config"
+            "${vols.media}/Audiobooks:/audiobooks"
+            "${vols.data}/Downloads:/downloads"
           ];
           networks = ["internal"];
         };

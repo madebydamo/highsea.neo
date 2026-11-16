@@ -1,49 +1,64 @@
 # Listenarr service options.
 {...}: {
-  flake.modules.nixos.listenarr-option = {
+  neoPlugin.modules.listenarr-option = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib;
-    with {inherit (lib.neo) mkOption mkEnableOption;}; {
-      options.neo.services.listenarr = mkOption {
+    with {inherit (lib.neo) mkOption mkEnableOption;}; let
+      name = plugin.name "listenarr";
+    in {
+      options.neo.services.${name} = mkOption {
         type = types.submodule {
           options =
             {
-              enabled = mkEnableOption "listenarr service" {rank = 0;};
+              enabled = mkEnableOption "Audiobooks you want, downloaded automatically${plugin.label}" {rank = 0;};
             }
-            // neo.mkReverseProxyOptions {
-              subdomain = "listenarr";
+            // lib.neo.mkReverseProxyOptions {
+              subdomain = name;
               auth.publicPaths = [
                 "^/api/"
                 "^/ping"
               ];
             }
-            // neo.mkVpnOptions {
+            // lib.neo.mkVpnOptions {
               enabled = true;
-              containers = ["listenarr"];
+              containers = [name];
               networks = ["internal"];
               ports = [4545];
             }
             // lib.neo.mkContainerDefinitions {
-              listenarr = "ghcr.io/listenarrs/listenarr:canary";
+              ${name} = "ghcr.io/listenarrs/listenarr:canary";
             }
-            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/listenarr"
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/${name}"
             // lib.neo.mkServiceMeta {
               category = "Media";
-              icon = "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/listenarr.svg";
+              icon = ./icon.svg;
+              tagline = "Gets the audiobooks you want automatically${plugin.label}";
               description = ''
-                Listenarr automates audiobook collection management similar to Sonarr or Radarr, but for audiobooks. It can search, download, and organize your library automatically using metadata from Audible and other sources.
+                Pick the audiobooks you want and Listenarr finds, downloads and files them, using book details from Audible and other sources.
+                Finished books land in your audiobook library, ready for Audiobookshelf.
               '';
+              notes = ''
+                Its web page is behind the Neo login page; its API (/api/) skips it and needs Listenarr's own API key.
+                Connect qBittorrent on its settings page (host qbittorrent, the qBittorrent port and password). Books are saved under Media/Audiobooks.
+                Runs the project's preview (canary) release, which can change without notice.
+              '';
+              privacy = ["audiobooks"];
               projectUrl = "https://getlistenarr.com/";
               githubUrl = "https://github.com/Listenarrs/Listenarr";
               releaseUrl = "https://github.com/Listenarrs/Listenarr/releases";
+              license = {
+                spdx = "AGPL-3.0-only";
+                url = "https://github.com/Listenarrs/Listenarr/blob/canary/LICENSE";
+              };
             }
             // lib.neo.mkSkillOptions {};
         };
         default = {};
-        description = "Listenarr service configuration";
+        description = "Listenarr: downloads audiobooks";
       };
     };
 }

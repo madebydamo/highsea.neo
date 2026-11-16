@@ -1,45 +1,35 @@
 # Jellyfin service implementation.
 {...}: {
-  flake.modules.nixos.jellyfin = {
+  neoPlugin.modules.jellyfin = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib; let
-      cfg = config.neo.services.jellyfin;
+      name = plugin.name "jellyfin";
+      cfg = config.neo.services.${name};
+      appdata = "${config.neo.core.volumes.appdata}/${name}";
+      # Transcodes are scratch space: /tmp, not appdata.
+      transcodes = "/tmp/${name}-cache/transcodes";
     in {
       config = mkIf cfg.enabled {
-        systemd.services.docker-jellyfin.preStart = lib.concatStringsSep "\n" [
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.media}";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/jellyfin";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/jellyfin/config";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/jellyfin/cache";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "/tmp/jellyfin-cache/transcodes";
-          })
+        systemd.services."docker-${name}".preStart = lib.neo.mkEnsureDirs config [
+          config.neo.core.volumes.media
+          appdata
+          "${appdata}/config"
+          "${appdata}/cache"
+          transcodes
         ];
 
-        virtualisation.oci-containers.containers.jellyfin = {
-          environment = {
-            PUID = toString config.neo.core.uid;
-            PGID = toString config.neo.core.gid;
-            TZ = config.neo.core.timeZone;
-          };
-          image = cfg.containers.jellyfin;
-          autoStart = true;
+        virtualisation.oci-containers.containers.${name} = {
+          image = cfg.containers.${name};
+          environment = lib.neo.linuxserverEnv config;
           devices = ["/dev/dri:/dev/dri"];
           volumes = [
-            "${config.neo.core.volumes.appdata}/jellyfin/config:/config"
-            "${config.neo.core.volumes.appdata}/jellyfin/cache:/cache"
-            "/tmp/jellyfin-cache/transcodes:/config/cache/transcodes"
+            "${appdata}/config:/config"
+            "${appdata}/cache:/cache"
+            "${transcodes}:/config/cache/transcodes"
             "${config.neo.core.volumes.media}:/media"
           ];
           networks = ["host"];

@@ -1,19 +1,21 @@
 # Hermes skill for flaresolverr — Cloudflare bypass proxy API.
 {...}: {
-  flake.modules.nixos.flaresolverr-skills = {
+  neoPlugin.modules.flaresolverr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.flaresolverr;
+    name = plugin.name "flaresolverr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
   in {
-    config.neo.services.flaresolverr.skill.conf = lib.neo.mkServiceSkill {
-      service = "flaresolverr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "FlareSolverr Cloudflare bypass for Prowlarr";
       tags = ["neo" "high_sea" "flaresolverr" "indexers" "api"];
-      title = "Neo · FlareSolverr (high_sea)";
+      title = "Neo · FlareSolverr${plugin.label}";
       body = ''
         ## When to Use
 

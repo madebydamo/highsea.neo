@@ -1,25 +1,27 @@
 # Hermes skill for qbittorrent — WebAPI automation.
 {...}: {
-  flake.modules.nixos.qbittorrent-skills = {
+  neoPlugin.modules.qbittorrent-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.qbittorrent;
+    name = plugin.name "qbittorrent";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://qbittorrent.<domain>";
+      else "https://${name}.<domain>";
     webPort = toString (cfg.webPort or 8082);
     listenPort = toString (cfg.listenPort or 8342);
   in {
-    config.neo.services.qbittorrent.skill.conf = lib.neo.mkServiceSkill {
-      service = "qbittorrent";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "qBittorrent downloads, WebUI API, VPN ports";
       tags = ["neo" "high_sea" "qbittorrent" "torrent" "api"];
-      title = "Neo · qBittorrent (high_sea)";
+      title = "Neo · qBittorrent${plugin.label}";
       body = ''
         ## When to Use
 

@@ -1,53 +1,43 @@
 # Bazarr service implementation.
+# Bazarr reads its settings from config/config.yaml only (no environment
+# overrides), so bazarr-setup writes the API key there.
 {...}: {
-  flake.modules.nixos.bazarr = {
+  neoPlugin.modules.bazarr = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib; let
-      cfg = config.neo.services.bazarr;
+      name = plugin.name "bazarr";
+      cfg = config.neo.services.${name};
+      appdata = "${config.neo.core.volumes.appdata}/${name}";
+      vols = config.neo.core.volumes;
     in {
       config = mkIf cfg.enabled {
         assertions = [
           {
             assertion = cfg.apiKey != null;
-            message = "neo.services.bazarr: apiKey must be set when the service is enabled.";
+            message = "neo.services.${name}: set the API key (use Generate).";
           }
         ];
 
-        systemd.services.docker-bazarr.preStart = lib.concatStringsSep "\n" [
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.media}/TV";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.media}/Movies";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/bazarr";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/bazarr/config";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.data}/Downloads";
-          })
+        systemd.services."docker-${name}".preStart = lib.neo.mkEnsureDirs config [
+          "${vols.media}/TV"
+          "${vols.media}/Movies"
+          "${vols.data}/Downloads"
+          appdata
+          "${appdata}/config"
         ];
 
-        virtualisation.oci-containers.containers.bazarr = {
-          environment = {
-            PUID = toString config.neo.core.uid;
-            PGID = toString config.neo.core.gid;
-            TZ = config.neo.core.timeZone;
-            BAZARR__AUTH__APIKEY = cfg.apiKey;
-          };
-          image = cfg.containers.bazarr;
-          autoStart = true;
+        virtualisation.oci-containers.containers.${name} = {
+          image = cfg.containers.${name};
+          environment = lib.neo.linuxserverEnv config;
           volumes = [
-            "${config.neo.core.volumes.appdata}/bazarr/config:/config"
-            "${config.neo.core.volumes.media}/TV:/tv"
-            "${config.neo.core.volumes.media}/Movies:/movies"
-            "${config.neo.core.volumes.data}/Downloads:/downloads"
+            "${appdata}/config:/config"
+            "${vols.media}/TV:/tv"
+            "${vols.media}/Movies:/movies"
+            "${vols.data}/Downloads:/downloads"
           ];
           networks = ["internal"];
         };

@@ -1,23 +1,25 @@
 # Hermes skill for bazarr — subtitle automation + API.
 {...}: {
-  flake.modules.nixos.bazarr-skills = {
+  neoPlugin.modules.bazarr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.bazarr;
+    name = plugin.name "bazarr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://bazarr.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.bazarr.skill.conf = lib.neo.mkServiceSkill {
-      service = "bazarr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Bazarr subtitles for Sonarr/Radarr, API";
       tags = ["neo" "high_sea" "bazarr" "subtitles" "api"];
-      title = "Neo · Bazarr (high_sea)";
+      title = "Neo · Bazarr${plugin.label}";
       body = ''
         ## When to Use
 

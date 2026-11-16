@@ -1,23 +1,25 @@
 # Hermes skill for audiobookshelf — libraries + REST API.
 {...}: {
-  flake.modules.nixos.audiobookshelf-skills = {
+  neoPlugin.modules.audiobookshelf-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.audiobookshelf;
+    name = plugin.name "audiobookshelf";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://audiobookshelf.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.audiobookshelf.skill.conf = lib.neo.mkServiceSkill {
-      service = "audiobookshelf";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Audiobookshelf libraries, podcasts, REST API";
       tags = ["neo" "high_sea" "audiobookshelf" "audiobooks" "api"];
-      title = "Neo · Audiobookshelf (high_sea)";
+      title = "Neo · Audiobookshelf${plugin.label}";
       body = ''
         ## When to Use
 

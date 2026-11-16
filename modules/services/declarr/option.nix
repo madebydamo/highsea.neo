@@ -1,52 +1,70 @@
 # declarr service options (declarative *arr config sync + auto wiring for high_sea stack).
 {...}: {
-  flake.modules.nixos.declarr-option = {
+  neoPlugin.modules.declarr-option = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib;
-    with {inherit (lib.neo) mkOption mkEnableOption;}; {
-      options.neo.services.declarr = mkOption {
+    with {inherit (lib.neo) mkOption mkEnableOption;}; let
+      name = plugin.name "declarr";
+      appdata = "${config.neo.core.volumes.appdata}/${name}";
+      seerrOn = config.neo.services.${plugin.name "seerr"}.enabled or false;
+    in {
+      options.neo.services.${name} = mkOption {
         type = types.submodule {
           options =
             {
-              enabled = mkEnableOption "declarr service (auto-config for sonarr/radarr/lidarr/prowlarr/qbittorrent/jellyfin/jellyseerr etc)" {rank = 0;};
+              enabled = mkEnableOption "Connects your media apps to each other for you${plugin.label}" {rank = 0;};
+              # declarr's own state (format database clone): appdata, so
+              # snapshots and Clear appdata cover it.
               stateDir = mkOption {
                 type = types.str;
-                default = "/var/lib/declarr";
-                description = "State dir for declarr (format db etc)";
+                default = "${appdata}/state";
+                description = "Folder for declarr's own state";
                 internal = true;
-                rank = 10;
               };
+              # Deep-merged over the generated declarr config (indexers,
+              # quality profiles, …). Format: github.com/upidapi/declarr.
               extraConfig = mkOption {
                 type = types.attrs;
                 default = {};
-                description = "Extra raw declarr config to deep-merge (for advanced indexers etc)";
+                description = "Extra declarr settings for advanced setups, merged over what Neo generates. Leave empty unless you know declarr's format.";
                 rank = 20;
+                ui = lib.neo.ui.mkUi {
+                  label = "Extra declarr settings";
+                  group = lib.neo.ui.groups.advanced;
+                };
               };
             }
-            // lib.neo.mkSystemdUnits [
-              "declarr"
-              "declarr-seerr"
-            ]
-            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/declarr"
+            // lib.neo.mkSystemdUnits ([name] ++ optional seerrOn "${name}-seerr")
+            // lib.neo.mkAppdata appdata
             // lib.neo.mkServiceMeta {
               category = "Media";
-              icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/declarr.svg";
+              icon = lib.neo.ui.icons.wrench;
+              tagline = "Connects your media apps to each other for you${plugin.label}";
               description = ''
-                declarr provides declarative configuration syncing for the *arr stack (sonarr, radarr, lidarr, prowlarr, jellyfin, and jellyseerr).
-                In high_sea it is used to automatically link services together: qbittorrent is wired as the download client for sonarr/radarr/lidarr/prowlarr, prowlarr registers the *arr apps, jellyfin gets plugins + libraries + repos configured, and jellyseerr (seerr) gets connections to jellyfin + *arr apps. All using stable API keys (for jellyfin: user-created in UI) and container DNS names.
-                Runs after the relevant containers are up; config is generated from enabled high_sea services.
+                Sets up Sonarr, Radarr, Lidarr, Prowlarr and Seerr so they work together without clicking through their settings.
+                It connects them to qBittorrent and to each other, and adds quality profiles and a few public search sites.
+              '';
+              notes = ''
+                Runs after every start of the apps and after every change of their settings. Changes made by hand to what it manages (download client, quality profiles, indexers, Prowlarr apps) are reset on its next run.
+                Seerr is only pre-configured until you finish its setup page.
+                It adds the public sites LimeTorrents, The Pirate Bay and YTS. Downloading copyrighted material can be illegal where you live; you are responsible for what is downloaded.
               '';
               projectUrl = "https://github.com/upidapi/declarr";
               githubUrl = "https://github.com/upidapi/declarr";
               releaseUrl = "https://github.com/upidapi/declarr/releases";
+              license = {
+                spdx = "GPL-3.0-only";
+                url = "https://github.com/upidapi/declarr/blob/main/LICENSE";
+              };
             }
             // lib.neo.mkSkillOptions {};
         };
         default = {};
-        description = "declarr service configuration for high_sea *arr auto-config";
+        description = "declarr: wires the media apps together";
       };
     };
 }

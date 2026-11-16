@@ -1,71 +1,95 @@
-# Qbittorrent service options.
+# qBittorrent service options.
 {...}: {
-  flake.modules.nixos.qbittorrent-option = {
+  neoPlugin.modules.qbittorrent-option = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib;
-    with {inherit (lib.neo) mkOption mkEnableOption;}; {
-      options.neo.services.qbittorrent = mkOption {
+    with {inherit (lib.neo) mkOption mkEnableOption;}; let
+      name = plugin.name "qbittorrent";
+    in {
+      options.neo.services.${name} = mkOption {
         type = types.submodule {
           options =
             {
-              enabled = mkEnableOption "qbittorrent service" {rank = 0;};
+              enabled = mkEnableOption "The downloader your media apps send their downloads to${plugin.label}" {rank = 0;};
               username = mkOption {
                 type = types.str;
                 default = "admin";
-                description = "Username for qBittorrent WebUI (enables declarr auto-configuration compatibility; overridable)";
+                description = "Name to sign in to qBittorrent's page with. The media apps use it too.";
                 rank = 5;
+                ui = lib.neo.ui.mkUi {label = "User name";};
               };
               password = mkOption {
                 type = types.str;
                 default = "adminadmin";
-                description = "Password for qBittorrent WebUI (enables declarr auto-configuration compatibility; overridable)";
-                rank = 5;
+                description = "Password to sign in to qBittorrent's page with. The media apps use it too.";
+                rank = 6;
               };
               webPort = mkOption {
                 type = types.port;
                 default = 8082;
-                description = "Web UI listen port inside container (used by declarr and gluetun port publishing)";
+                description = "Port of qBittorrent's web page inside Docker. Change it only when another app behind the VPN uses the same port.";
                 rank = 10;
+                ui = lib.neo.ui.mkUi {
+                  label = "Web page port";
+                  group = lib.neo.ui.groups.advanced;
+                };
               };
               listenPort = mkOption {
                 type = types.port;
                 default = 8342;
-                description = "Incoming torrent listen port (used by gluetun firewall input ports)";
-                rank = 10;
+                description = "Port other torrent users connect to. It must be the port your VPN forwards to you, or downloads stay slow.";
+                rank = 11;
+                ui = lib.neo.ui.mkUi {
+                  label = "Incoming connections port";
+                  group = lib.neo.ui.groups.advanced;
+                };
               };
             }
-            // neo.mkReverseProxyOptions {
-              subdomain = "qbittorrent";
+            // lib.neo.mkReverseProxyOptions {
+              subdomain = name;
             }
-            // neo.mkVpnOptions {
+            # vpn.ports follows webPort and listenPort (default.nix).
+            // lib.neo.mkVpnOptions {
               enabled = true;
-              containers = ["qbittorrent"];
+              containers = [name];
               networks = ["internal"];
               ports = [8082 8342];
             }
             // lib.neo.mkContainerDefinitions {
-              qbittorrent = "lscr.io/linuxserver/qbittorrent:latest";
+              ${name} = "lscr.io/linuxserver/qbittorrent:latest";
+              extraUnits = ["${name}-portcheck"];
             }
-            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/qbittorrent"
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/${name}"
             // lib.neo.mkServiceMeta {
               category = "Media";
-              icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/qbittorrent.svg";
+              icon = ./icon.svg;
+              tagline = "Downloads files for your media apps${plugin.label}";
               description = ''
-                qBittorrent is a bittorrent client programmed in C++ / Qt that uses libtorrent (sometimes called libtorrent-rasterbar) by Arvid Norberg.
-                It aims to be a good alternative to all other bittorrent clients out there. qBittorrent is fast, stable and provides unicode support as well as many features.
+                qBittorrent does the downloading for Sonarr, Radarr, Lidarr and Listenarr and hands the finished files back to them.
+                Its page shows what is downloading, how fast and what is waiting.
+              '';
+              notes = ''
+                Sends its traffic through your VPN by default. For fast downloads the VPN must forward the incoming connections port to you (add it to the VPN's input ports); a check every 5 minutes restarts qBittorrent when that port is closed.
+                Neo rewrites qBittorrent's settings file on every start, so changes to downloads paths, ports or the sign-in on its page are reset; seeding stops after a ratio of 1.5 or one day.
+                Downloads land in Downloads, unfinished ones in Downloads/incomplete.
               '';
               projectUrl = "https://www.qbittorrent.org/";
               githubUrl = "https://github.com/qbittorrent/qBittorrent";
               releaseUrl = "https://github.com/qbittorrent/qBittorrent/releases";
+              license = {
+                spdx = "GPL-2.0-or-later";
+                url = "https://github.com/qbittorrent/qBittorrent/blob/master/COPYING";
+              };
               iframeCompatible = false;
             }
             // lib.neo.mkSkillOptions {};
         };
         default = {};
-        description = "Qbittorrent service configuration";
+        description = "qBittorrent: the downloader of the media apps";
       };
     };
 }

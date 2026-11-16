@@ -1,23 +1,25 @@
 # Hermes skill for prowlarr — indexer manager REST API.
 {...}: {
-  flake.modules.nixos.prowlarr-skills = {
+  neoPlugin.modules.prowlarr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.prowlarr;
+    name = plugin.name "prowlarr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://prowlarr.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.prowlarr.skill.conf = lib.neo.mkServiceSkill {
-      service = "prowlarr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Prowlarr indexers, apps sync, search API";
       tags = ["neo" "high_sea" "prowlarr" "indexers" "api"];
-      title = "Neo · Prowlarr (high_sea)";
+      title = "Neo · Prowlarr${plugin.label}";
       body = ''
         ## When to Use
 

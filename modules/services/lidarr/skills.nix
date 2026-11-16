@@ -1,23 +1,25 @@
 # Hermes skill for lidarr — ops + REST API.
 {...}: {
-  flake.modules.nixos.lidarr-skills = {
+  neoPlugin.modules.lidarr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.lidarr;
+    name = plugin.name "lidarr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://lidarr.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.lidarr.skill.conf = lib.neo.mkServiceSkill {
-      service = "lidarr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Lidarr music library, queue, search, REST API";
       tags = ["neo" "high_sea" "lidarr" "music" "api"];
-      title = "Neo · Lidarr (high_sea)";
+      title = "Neo · Lidarr${plugin.label}";
       body = ''
         ## When to Use
 

@@ -1,23 +1,25 @@
 # Hermes skill for deemix — Deezer downloader UI.
 {...}: {
-  flake.modules.nixos.deemix-skills = {
+  neoPlugin.modules.deemix-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.deemix;
+    name = plugin.name "deemix";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://deemix.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.deemix.skill.conf = lib.neo.mkServiceSkill {
-      service = "deemix";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Deemix Deezer downloads to music library";
       tags = ["neo" "high_sea" "deemix" "music"];
-      title = "Neo · Deemix (high_sea)";
+      title = "Neo · Deemix${plugin.label}";
       body = ''
         ## When to Use
 

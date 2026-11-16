@@ -1,43 +1,20 @@
 # Jellyfin reverse proxy configuration for SWAG.
+# proxy.conf already handles the WebSocket upgrade (/socket) and passes Range
+# headers; no extra locations. /metrics is hidden by monitoring.nix (hidePaths).
 {...}: {
-  flake.modules.nixos.jellyfin-swag = {
+  neoPlugin.modules.jellyfin-swag = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.jellyfin;
+    name = plugin.name "jellyfin";
+    cfg = config.neo.services.${name};
   in {
-    config.neo.services.jellyfin.proxyConf = lib.mkDefault ''
-      server {
-        include /config/nginx/listen-https.conf;
-        http2 on;
-        server_name ${cfg.subdomain}.*;
-        include /config/nginx/ssl.conf;
-        include /config/nginx/geo-access.conf;
-        client_max_body_size 0;
-
-        location / {
-          include /config/nginx/proxy.conf;
-          proxy_pass http://host.docker.internal:8096;
-          proxy_set_header Range $http_range;
-          proxy_set_header If-Range $http_if_range;
-          ${lib.neo.authBlock config cfg}
-        }
-
-        location ~ (/jellyfin)?/socket {
-          include /config/nginx/proxy.conf;
-          proxy_pass http://host.docker.internal:8096;
-          proxy_set_header Upgrade $http_upgrade;
-          proxy_set_header Connection "upgrade";
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-          proxy_set_header X-Forwarded-Host $http_host;
-        }
-
-        ${lib.neo.authLocations config cfg}
-      }
-    '';
+    config.neo.services.${name}.proxyConf = lib.mkDefault (lib.neo.mkSubdomainProxyConf {
+      inherit config cfg;
+      # Jellyfin runs on the host network.
+      proxyPass = "http://host.docker.internal:8096";
+    });
   };
 }

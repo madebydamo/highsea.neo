@@ -1,23 +1,25 @@
 # Hermes skill for listenarr — audiobook *arr-style automation.
 {...}: {
-  flake.modules.nixos.listenarr-skills = {
+  neoPlugin.modules.listenarr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.listenarr;
+    name = plugin.name "listenarr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://listenarr.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.listenarr.skill.conf = lib.neo.mkServiceSkill {
-      service = "listenarr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Listenarr audiobook automation and API";
       tags = ["neo" "high_sea" "listenarr" "audiobooks" "api"];
-      title = "Neo · Listenarr (high_sea)";
+      title = "Neo · Listenarr${plugin.label}";
       body = ''
         ## When to Use
 

@@ -1,23 +1,25 @@
 # Hermes skill for radarr — ops + REST API (high leverage for media automation).
 {...}: {
-  flake.modules.nixos.radarr-skills = {
+  neoPlugin.modules.radarr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.radarr;
+    name = plugin.name "radarr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://radarr.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.radarr.skill.conf = lib.neo.mkServiceSkill {
-      service = "radarr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Radarr movies, queue, search, REST API";
       tags = ["neo" "high_sea" "radarr" "media" "api"];
-      title = "Neo · Radarr (high_sea)";
+      title = "Neo · Radarr${plugin.label}";
       body = ''
         ## When to Use
 

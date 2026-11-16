@@ -1,55 +1,47 @@
-# Tdarr service implementation.
+# Tdarr service implementation (server with one internal node).
 {...}: {
-  flake.modules.nixos.tdarr = {
+  neoPlugin.modules.tdarr = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib; let
-      cfg = config.neo.services.tdarr;
+      name = plugin.name "tdarr";
+      cfg = config.neo.services.${name};
+      appdata = "${config.neo.core.volumes.appdata}/${name}";
     in {
       config = mkIf cfg.enabled {
-        systemd.services.docker-tdarr.preStart = lib.concatStringsSep "\n" [
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/tdarr";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/tdarr/config";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/tdarr/server";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/tdarr/logs";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.media}";
-          })
+        systemd.services."docker-${name}".preStart = lib.neo.mkEnsureDirs config [
+          appdata
+          "${appdata}/config"
+          "${appdata}/server"
+          "${appdata}/logs"
+          config.neo.core.volumes.media
         ];
 
-        virtualisation.oci-containers.containers.tdarr = {
-          environment = {
-            PUID = toString config.neo.core.uid;
-            PGID = toString config.neo.core.gid;
-            TZ = config.neo.core.timeZone;
-            UMASK_SET = "002";
-            serverIP = "0.0.0.0";
-            serverPort = "8266";
-            webUIPort = "8265";
-            internalNode = "true";
-            inContainer = "true";
-            ffmpegVersion = "7";
-            nodeName = "TdarrNode";
-            auth = "false";
-          };
-          image = cfg.containers.tdarr;
-          autoStart = true;
+        virtualisation.oci-containers.containers.${name} = {
+          environment =
+            lib.neo.linuxserverEnv config
+            // {
+              UMASK_SET = "002";
+              serverIP = "0.0.0.0";
+              serverPort = "8266";
+              webUIPort = "8265";
+              internalNode = "true";
+              inContainer = "true";
+              ffmpegVersion = "7";
+              nodeName = "TdarrNode";
+              auth = "false";
+            };
+          image = cfg.containers.${name};
           devices = ["/dev/dri:/dev/dri"];
           volumes = [
-            "${config.neo.core.volumes.appdata}/tdarr/config:/app/configs"
-            "${config.neo.core.volumes.appdata}/tdarr/server:/app/server"
-            "${config.neo.core.volumes.appdata}/tdarr/logs:/app/logs"
-            "/tmp/tdarr-cache:/temp"
+            "${appdata}/config:/app/configs"
+            "${appdata}/server:/app/server"
+            "${appdata}/logs:/app/logs"
+            # Scratch space for conversions.
+            "/tmp/${name}-cache:/temp"
             "${config.neo.core.volumes.media}:/media"
           ];
           networks = ["internal"];

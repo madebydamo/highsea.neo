@@ -1,19 +1,21 @@
 # Hermes skill for declarr — declarative *arr stack wiring.
 {...}: {
-  flake.modules.nixos.declarr-skills = {
+  neoPlugin.modules.declarr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.declarr;
+    name = plugin.name "declarr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
   in {
-    config.neo.services.declarr.skill.conf = lib.neo.mkServiceSkill {
-      service = "declarr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "declarr sync for *arr/qbit/seerr wiring";
       tags = ["neo" "high_sea" "declarr" "automation"];
-      title = "Neo · declarr (high_sea)";
+      title = "Neo · declarr${plugin.label}";
       body = ''
         ## When to Use
 

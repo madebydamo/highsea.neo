@@ -1,41 +1,39 @@
 # Prowlarr service implementation.
 {...}: {
-  flake.modules.nixos.prowlarr = {
+  neoPlugin.modules.prowlarr = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib; let
-      cfg = config.neo.services.prowlarr;
+      name = plugin.name "prowlarr";
+      cfg = config.neo.services.${name};
+      appdata = "${config.neo.core.volumes.appdata}/${name}";
     in {
       config = mkIf cfg.enabled {
         assertions = [
           {
             assertion = cfg.apiKey != null;
-            message = "neo.services.prowlarr: apiKey must be set when the service is enabled.";
+            message = "neo.services.${name}: set the API key (use Generate).";
           }
         ];
 
-        systemd.services.docker-prowlarr.preStart = lib.concatStringsSep "\n" [
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/prowlarr";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/prowlarr/config";
-          })
+        systemd.services."docker-${name}".preStart = lib.neo.mkEnsureDirs config [
+          appdata
+          "${appdata}/config"
         ];
 
-        virtualisation.oci-containers.containers.prowlarr = {
-          environment = {
-            PUID = toString config.neo.core.uid;
-            PGID = toString config.neo.core.gid;
-            TZ = config.neo.core.timeZone;
-            PROWLARR__AUTH__APIKEY = cfg.apiKey;
-          };
-          image = cfg.containers.prowlarr;
-          autoStart = true;
+        virtualisation.oci-containers.containers.${name} = {
+          image = cfg.containers.${name};
+          environment =
+            lib.neo.linuxserverEnv config
+            // {
+              PROWLARR__AUTH__APIKEY = cfg.apiKey;
+              PROWLARR__LOG__LEVEL = "info";
+            };
           volumes = [
-            "${config.neo.core.volumes.appdata}/prowlarr/config:/config"
+            "${appdata}/config:/config"
           ];
           networks = ["internal"];
         };

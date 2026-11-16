@@ -1,57 +1,75 @@
 # Lidarr service options.
 {...}: {
-  flake.modules.nixos.lidarr-option = {
+  neoPlugin.modules.lidarr-option = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib;
-    with {inherit (lib.neo) mkOption mkEnableOption;}; {
-      options.neo.services.lidarr = mkOption {
+    with {inherit (lib.neo) mkOption mkEnableOption;}; let
+      name = plugin.name "lidarr";
+    in {
+      options.neo.services.${name} = mkOption {
         type = types.submodule {
           options =
             {
-              enabled = mkEnableOption "lidarr service" {rank = 0;};
+              enabled = mkEnableOption "Albums of the artists you like, downloaded automatically${plugin.label}" {rank = 0;};
+              # Reaches the container as LIDARR__AUTH__APIKEY; declarr and the
+              # exporter use the same key.
               apiKey = mkOption {
                 type = types.nullOr types.str;
                 default = null;
-                description = "Stable API key for Lidarr (enables declarr auto-configuration compatibility; overridable)";
+                description = "Key the other media apps use to talk to Lidarr. Changing it is passed on to apps the media helper connects; apps you connected by hand need the new key.";
                 helper = lib.neo.helpers.randomToken;
                 rank = 5;
+                ui = lib.neo.ui.mkUi {label = "API key";};
               };
             }
-            // neo.mkReverseProxyOptions {
-              subdomain = "lidarr";
+            // lib.neo.mkReverseProxyOptions {
+              subdomain = name;
               auth.publicPaths = [
                 "^/api/"
                 "^/ping"
               ];
             }
-            // neo.mkVpnOptions {
+            // lib.neo.mkVpnOptions {
               enabled = true;
-              containers = ["lidarr"];
+              containers = [name];
               networks = ["internal"];
               ports = [8686];
             }
             // lib.neo.mkContainerDefinitions {
-              lidarr = "lscr.io/linuxserver/lidarr:latest";
+              ${name} = "lscr.io/linuxserver/lidarr:latest";
             }
-            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/lidarr"
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/${name}"
             // lib.neo.mkServiceMeta {
               category = "Media";
-              icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/lidarr.svg";
+              icon = ./icon.svg;
+              tagline = "Keeps your music collection complete${plugin.label}";
               description = ''
-                Lidarr is a music collection manager for Usenet and BitTorrent users. It can monitor multiple RSS feeds for new albums from your favorite artists and will interface with clients and indexers to grab, sort, and rename them.
-                It can also be configured to automatically upgrade the quality of existing files in the library when a better quality format becomes available.
+                Follow your favourite artists and Lidarr finds, downloads and files their albums, including new releases.
+                Your music library then plays in Jellyfin or any music app that reads a folder, without a streaming subscription.
               '';
+              notes = ''
+                Lidarr's own sign-in is off for visits through Neo, so the Neo login page is the only gate for its web page.
+                Its API (/api/, used by Prowlarr and other apps) skips the Neo login and needs the API key.
+                Music is saved under Media/Music, downloads go through qBittorrent into Downloads.
+                With the media helper on, the download client and root folder are set up for you.
+              '';
+              privacy = ["music"];
               projectUrl = "https://lidarr.audio/";
               githubUrl = "https://github.com/Lidarr/Lidarr";
               releaseUrl = "https://github.com/Lidarr/Lidarr/releases";
+              license = {
+                spdx = "GPL-3.0-only";
+                url = "https://github.com/Lidarr/Lidarr/blob/develop/LICENSE.md";
+              };
             }
             // lib.neo.mkSkillOptions {};
         };
         default = {};
-        description = "Lidarr service configuration";
+        description = "Lidarr: downloads the music of artists you follow";
       };
     };
 }

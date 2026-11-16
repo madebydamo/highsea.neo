@@ -1,23 +1,25 @@
 # Hermes skill for sonarr — ops + REST API (high leverage for media automation).
 {...}: {
-  flake.modules.nixos.sonarr-skills = {
+  neoPlugin.modules.sonarr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.sonarr;
+    name = plugin.name "sonarr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://sonarr.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.sonarr.skill.conf = lib.neo.mkServiceSkill {
-      service = "sonarr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Sonarr TV library, queue, search, REST API";
       tags = ["neo" "high_sea" "sonarr" "media" "api"];
-      title = "Neo · Sonarr (high_sea)";
+      title = "Neo · Sonarr${plugin.label}";
       body = ''
         ## When to Use
 

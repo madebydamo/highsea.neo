@@ -1,23 +1,25 @@
 # Hermes skill for seerr — media requests + API (Jellyseerr successor).
 {...}: {
-  flake.modules.nixos.seerr-skills = {
+  neoPlugin.modules.seerr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.seerr;
+    name = plugin.name "seerr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://seerr.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.seerr.skill.conf = lib.neo.mkServiceSkill {
-      service = "seerr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Seerr media requests, users, Radarr/Sonarr API";
       tags = ["neo" "high_sea" "seerr" "requests" "api"];
-      title = "Neo · Seerr (high_sea)";
+      title = "Neo · Seerr${plugin.label}";
       body = ''
         ## When to Use
 

@@ -1,23 +1,25 @@
 # Hermes skill for tdarr — transcoding library automation.
 {...}: {
-  flake.modules.nixos.tdarr-skills = {
+  neoPlugin.modules.tdarr-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.tdarr;
+    name = plugin.name "tdarr";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://tdarr.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.tdarr.skill.conf = lib.neo.mkServiceSkill {
-      service = "tdarr";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Tdarr transcode queues, libraries, node API";
       tags = ["neo" "high_sea" "tdarr" "transcode" "api"];
-      title = "Neo · Tdarr (high_sea)";
+      title = "Neo · Tdarr${plugin.label}";
       body = ''
         ## When to Use
 

@@ -1,51 +1,51 @@
-# declarr service implementation. Generates config from enabled high_sea *arr services and auto-wires qbittorrent + prowlarr apps + seerr.
+# declarr: configures the high_sea apps from Neo settings. It runs on the
+# host and reaches every app through its public URL (SWAG); the addresses it
+# writes into the apps (download client, Prowlarr app sync, FlareSolverr) are
+# container names, reached over the plugin's Docker links (links.nix).
+#   declarr        syncs Sonarr, Radarr, Lidarr and Prowlarr (setup unit)
+#   declarr-seerr  pre-configures Seerr's settings.json until Seerr is set up
 {inputs, ...}: {
-  flake.modules.nixos.declarr = {
+  neoPlugin.modules.declarr = {
     config,
     lib,
     pkgs,
+    plugin,
     ...
   }:
     with lib; let
-      cfg = config.neo.services.declarr;
+      name = plugin.name "declarr";
+      cfg = config.neo.services.${name};
       hs = config.neo.services;
+      # Names of this copy's services (prefixed when the plugin has a prefix).
+      N = genAttrs ["sonarr" "radarr" "lidarr" "prowlarr" "qbittorrent" "flaresolverr" "seerr" "jellyfin"] plugin.name;
+      on = s: (hs.${N.${s}} or {}).enabled or false;
       declarrPkg = inputs.declarr.packages.${pkgs.stdenv.hostPlatform.system}.declarr;
       defaultApiKey = "d3c1arrh0m3s3rv3r4p1k3y32ch4rsabcd";
-      qbitUser = hs.qbittorrent.username or "admin";
-      qbitPass = hs.qbittorrent.password or "adminadmin";
-      sonarrApiKey =
-        if (hs.sonarr.enabled or false) && (hs.sonarr.apiKey or null) != null
-        then hs.sonarr.apiKey
+      qbit = hs.${N.qbittorrent};
+      qbitUser = qbit.username or "admin";
+      qbitPass = qbit.password or "adminadmin";
+      qbitPort = qbit.webPort or 8082;
+      keyOf = s:
+        if on s && (hs.${N.${s}}.apiKey or null) != null
+        then hs.${N.${s}}.apiKey
         else defaultApiKey;
-      radarrApiKey =
-        if (hs.radarr.enabled or false) && (hs.radarr.apiKey or null) != null
-        then hs.radarr.apiKey
-        else defaultApiKey;
-      lidarrApiKey =
-        if (hs.lidarr.enabled or false) && (hs.lidarr.apiKey or null) != null
-        then hs.lidarr.apiKey
-        else defaultApiKey;
-      prowlarrApiKey =
-        if (hs.prowlarr.enabled or false) && (hs.prowlarr.apiKey or null) != null
-        then hs.prowlarr.apiKey
-        else defaultApiKey;
+      sonarrApiKey = keyOf "sonarr";
+      radarrApiKey = keyOf "radarr";
+      lidarrApiKey = keyOf "lidarr";
+      prowlarrApiKey = keyOf "prowlarr";
 
-      # Declarr runs as a host systemd service (not in the "internal" docker network),
-      # so it cannot resolve docker container hostnames like "radarr". Use the public
-      # HTTPS URLs exposed via SWAG (subdomain + swag.domain) for all URLs that declarr
-      # itself uses to connect to services (the "declarr.url" entries and the jellyseerr
-      # radarr/sonarr/fix lookup entries). Inter-container references that the *arr apps
-      # themselves use (e.g. sonarr's download client host, prowlarr app baseUrls) stay
-      # as internal docker names so containers can reach each other directly on the
-      # internal network without going through the reverse proxy.
+      # declarr runs on the host and cannot resolve container names: it uses the
+      # public HTTPS URLs (subdomain + swag.domain) for every app it talks to
+      # itself, including the Seerr lookups. Addresses the apps use to reach each
+      # other stay container names.
       swag = config.neo.services.swag or {};
       domain = swag.domain or null;
-      radarrSub = (hs.radarr or {}).subdomain or "radarr";
-      sonarrSub = (hs.sonarr or {}).subdomain or "sonarr";
-      lidarrSub = (hs.lidarr or {}).subdomain or "lidarr";
-      prowlarrSub = (hs.prowlarr or {}).subdomain or "prowlarr";
-      seerrSub = (hs.seerr or {}).subdomain or "seerr";
-      jellyfinSub = (hs.jellyfin or {}).subdomain or "jellyfin";
+      radarrSub = (hs.${N.radarr} or {}).subdomain or N.radarr;
+      sonarrSub = (hs.${N.sonarr} or {}).subdomain or N.sonarr;
+      lidarrSub = (hs.${N.lidarr} or {}).subdomain or N.lidarr;
+      prowlarrSub = (hs.${N.prowlarr} or {}).subdomain or N.prowlarr;
+      seerrSub = (hs.${N.seerr} or {}).subdomain or N.seerr;
+      jellyfinSub = (hs.${N.jellyfin} or {}).subdomain or N.jellyfin;
       externalUrlFor = sub:
         if domain != null
         then "https://${sub}.${domain}"
@@ -63,7 +63,7 @@
           ++ [name "localhost"]
         );
 
-      appdata = "${config.neo.core.volumes.appdata}/declarr";
+      appdata = "${config.neo.core.volumes.appdata}/${name}";
       arrConfigFile = "${appdata}/config.json";
       seerrConfigFile = "${appdata}/seerr-config.json";
 
@@ -76,7 +76,7 @@
             globalResolvePaths = [];
           };
         }
-        // optionalAttrs hs.sonarr.enabled {
+        // optionalAttrs (on "sonarr") {
           sonarr = {
             declarr = {
               type = "sonarr";
@@ -85,15 +85,15 @@
               in
                 if u != null
                 then u
-                else "http://sonarr:8989";
+                else "http://${N.sonarr}:8989";
             };
             rootFolder = ["/tv"];
-            downloadClient = optionalAttrs hs.qbittorrent.enabled {
+            downloadClient = optionalAttrs (on "qbittorrent") {
               qBittorrent = {
                 implementation = "QBittorrent";
                 fields = {
-                  host = "qbittorrent";
-                  port = 8082;
+                  host = N.qbittorrent;
+                  port = qbitPort;
                   username = qbitUser;
                   password = qbitPass;
                   sequentialOrder = true;
@@ -192,7 +192,7 @@
                 # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
                 # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr/seerr etc.
                 authenticationRequired = "DisabledForLocalAddresses";
-                allowedHosts = allowedHostsFor "sonarr" sonarrSub;
+                allowedHosts = allowedHostsFor N.sonarr sonarrSub;
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 8989;
@@ -203,7 +203,7 @@
                 sslCertPassword = "";
                 instanceName = "Sonarr";
                 branch = "main";
-                logLevel = "debug";
+                logLevel = "info";
                 consoleLogLevel = "";
                 logSizeLimit = 1;
                 updateScriptPath = "";
@@ -245,7 +245,7 @@
             };
           };
         }
-        // optionalAttrs hs.radarr.enabled {
+        // optionalAttrs (on "radarr") {
           radarr = {
             declarr = {
               type = "radarr";
@@ -254,15 +254,15 @@
               in
                 if u != null
                 then u
-                else "http://radarr:7878";
+                else "http://${N.radarr}:7878";
             };
             rootFolder = ["/movies"];
-            downloadClient = optionalAttrs hs.qbittorrent.enabled {
+            downloadClient = optionalAttrs (on "qbittorrent") {
               qBittorrent = {
                 implementation = "QBittorrent";
                 fields = {
-                  host = "qbittorrent";
-                  port = 8082;
+                  host = N.qbittorrent;
+                  port = qbitPort;
                   username = qbitUser;
                   password = qbitPass;
                   sequentialOrder = true;
@@ -361,7 +361,7 @@
                 # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
                 # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr/seerr etc.
                 authenticationRequired = "DisabledForLocalAddresses";
-                allowedHosts = allowedHostsFor "radarr" radarrSub;
+                allowedHosts = allowedHostsFor N.radarr radarrSub;
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 7878;
@@ -372,7 +372,7 @@
                 sslCertPassword = "";
                 instanceName = "Radarr";
                 branch = "main";
-                logLevel = "debug";
+                logLevel = "info";
                 consoleLogLevel = "";
                 logSizeLimit = 1;
                 updateScriptPath = "";
@@ -408,7 +408,7 @@
             };
           };
         }
-        // optionalAttrs hs.lidarr.enabled {
+        // optionalAttrs (on "lidarr") {
           lidarr = {
             declarr = {
               type = "lidarr";
@@ -417,7 +417,7 @@
               in
                 if u != null
                 then u
-                else "http://lidarr:8686";
+                else "http://${N.lidarr}:8686";
             };
             # Lidarr root folders require quality/metadata profile names (not path lists).
             # "Standard" is Lidarr's built-in default for both profile types.
@@ -432,12 +432,12 @@
                 defaultTags = [];
               };
             };
-            downloadClient = optionalAttrs hs.qbittorrent.enabled {
+            downloadClient = optionalAttrs (on "qbittorrent") {
               qBittorrent = {
                 implementation = "QBittorrent";
                 fields = {
-                  host = "qbittorrent";
-                  port = 8082;
+                  host = N.qbittorrent;
+                  port = qbitPort;
                   username = qbitUser;
                   password = qbitPass;
                   sequentialOrder = true;
@@ -457,7 +457,7 @@
                 # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
                 # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr etc.
                 authenticationRequired = "DisabledForLocalAddresses";
-                allowedHosts = allowedHostsFor "lidarr" lidarrSub;
+                allowedHosts = allowedHostsFor N.lidarr lidarrSub;
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 8686;
@@ -468,7 +468,7 @@
                 sslCertPassword = "";
                 instanceName = "Lidarr";
                 branch = "master";
-                logLevel = "debug";
+                logLevel = "info";
                 consoleLogLevel = "";
                 logSizeLimit = 1;
                 updateScriptPath = "";
@@ -510,7 +510,7 @@
             };
           };
         }
-        // optionalAttrs hs.prowlarr.enabled {
+        // optionalAttrs (on "prowlarr") {
           prowlarr = {
             declarr = {
               type = "prowlarr";
@@ -519,7 +519,7 @@
               in
                 if u != null
                 then u
-                else "http://prowlarr:9696";
+                else "http://${N.prowlarr}:9696";
             };
             config = {
               ui = {
@@ -534,7 +534,7 @@
                 # "DisabledForLocalAddresses" so that when reached via the SWAG/tinyauth reverse proxy (appears local)
                 # there is no *arr built-in login prompt (avoids double auth); API key still works for declarr/seerr etc.
                 authenticationRequired = "DisabledForLocalAddresses";
-                allowedHosts = allowedHostsFor "prowlarr" prowlarrSub;
+                allowedHosts = allowedHostsFor N.prowlarr prowlarrSub;
                 backupInterval = 7;
                 backupRetention = 28;
                 port = 9696;
@@ -545,18 +545,18 @@
                 sslCertPassword = "";
                 instanceName = "Prowlarr";
                 branch = "main";
-                logLevel = "debug";
+                logLevel = "info";
                 consoleLogLevel = "";
                 logSizeLimit = 1;
                 updateScriptPath = "";
               };
             };
-            downloadClient = optionalAttrs hs.qbittorrent.enabled {
+            downloadClient = optionalAttrs (on "qbittorrent") {
               qBittorrent = {
                 implementation = "QBittorrent";
                 fields = {
-                  host = "qbittorrent";
-                  port = 8082;
+                  host = N.qbittorrent;
+                  port = qbitPort;
                   username = qbitUser;
                   password = qbitPass;
                   sequentialOrder = true;
@@ -584,35 +584,35 @@
               };
             };
             applications =
-              (optionalAttrs hs.sonarr.enabled {
+              (optionalAttrs (on "sonarr") {
                 Sonarr = {
                   syncLevel = "fullSync";
                   implementation = "Sonarr";
                   fields = {
-                    prowlarrUrl = "http://prowlarr:9696";
-                    baseUrl = "http://sonarr:8989";
+                    prowlarrUrl = "http://${N.prowlarr}:9696";
+                    baseUrl = "http://${N.sonarr}:8989";
                     apiKey = sonarrApiKey;
                   };
                 };
               })
-              // (optionalAttrs hs.radarr.enabled {
+              // (optionalAttrs (on "radarr") {
                 Radarr = {
                   syncLevel = "fullSync";
                   implementation = "Radarr";
                   fields = {
-                    prowlarrUrl = "http://prowlarr:9696";
-                    baseUrl = "http://radarr:7878";
+                    prowlarrUrl = "http://${N.prowlarr}:9696";
+                    baseUrl = "http://${N.radarr}:7878";
                     apiKey = radarrApiKey;
                   };
                 };
               })
-              // (optionalAttrs hs.lidarr.enabled {
+              // (optionalAttrs (on "lidarr") {
                 Lidarr = {
                   syncLevel = "fullSync";
                   implementation = "Lidarr";
                   fields = {
-                    prowlarrUrl = "http://prowlarr:9696";
-                    baseUrl = "http://lidarr:8686";
+                    prowlarrUrl = "http://${N.prowlarr}:9696";
+                    baseUrl = "http://${N.lidarr}:8686";
                     apiKey = lidarrApiKey;
                   };
                 };
@@ -650,10 +650,10 @@
                 appProfileId = "Standard";
               };
             };
-            indexerProxy = optionalAttrs hs.flaresolverr.enabled {
+            indexerProxy = optionalAttrs (on "flaresolverr") {
               FlareSolverr = {
                 fields = {
-                  host = "http://flaresolverr:8191/";
+                  host = "http://${N.flaresolverr}:8191/";
                   requestTimeout = 60;
                 };
                 implementation = "FlareSolverr";
@@ -662,14 +662,14 @@
             };
           };
         };
-      seerrConfig = optionalAttrs (hs.seerr.enabled or false) {
+      seerrConfig = optionalAttrs (on "seerr") {
         # jellyseerr under seerr key for declarr
         jellyseerr = {
           declarr = {
             type = "jellyseerr";
             url = externalUrlFor seerrSub;
             port = 443;
-            stateDir = "${config.neo.core.volumes.appdata}/seerr/config";
+            stateDir = "${config.neo.core.volumes.appdata}/${N.seerr}/config";
           };
           # main + public + fuller jellyfin ensure declarr's sync_jellyseerr succeeds:
           # - defaultPermissions must be dict (not int from declarr's jellyseerr-settings.json) so perms_to_int doesn't get int
@@ -696,7 +696,7 @@
             email = "admin@example.com";
             password = "admin";
           };
-          sonarr = lib.optionals (hs.sonarr.enabled or false) [
+          sonarr = lib.optionals (on "sonarr") [
             {
               # Fields for declarr's fix() (which does quality profile ID lookup via *arr API from the host)
               # + fields for the final Seerr settings.json (seerr container will reach sonarr via the public
@@ -717,7 +717,7 @@
               hostname =
                 if domain != null
                 then "${sonarrSub}.${domain}"
-                else "sonarr";
+                else N.sonarr;
               id = 0;
               is4k = false;
               isDefault = true;
@@ -736,7 +736,7 @@
               activeServerId = 0;
             }
           ];
-          radarr = lib.optionals (hs.radarr.enabled or false) [
+          radarr = lib.optionals (on "radarr") [
             {
               activeDirectory = "/movies";
               activeProfileName = "1080p Balanced";
@@ -751,7 +751,7 @@
               hostname =
                 if domain != null
                 then "${radarrSub}.${domain}"
-                else "radarr";
+                else N.radarr;
               id = 0;
               is4k = false;
               isDefault = true;
@@ -775,96 +775,80 @@
 
       fullConfig = recursiveUpdate arrConfig (cfg.extraConfig or {});
 
-      preStart = lib.concatStringsSep "\n" [
-        (lib.neo.mkActivationScriptForDir config {dirPath = appdata;})
-        (lib.neo.mkActivationScriptForDir config {dirPath = cfg.stateDir;})
+      # Containers declarr talks to (through SWAG): it runs after them, and
+      # again whenever one of them restarts.
+      arrContainers = filter on ["sonarr" "radarr" "lidarr" "prowlarr" "qbittorrent"];
+      swagAfter = optional (config.neo.services.swag.enabled or false) "docker-swag.service";
+
+      prepare = lib.concatStringsSep "\n" [
+        (lib.neo.mkEnsureDirs config [appdata cfg.stateDir])
         (lib.neo.mkActivationScriptForFile config {
           filePath = arrConfigFile;
           content = builtins.toJSON fullConfig;
-          mode = "0644";
+          mode = "0600";
         })
         (lib.neo.mkActivationScriptForFile config {
           filePath = seerrConfigFile;
           content = builtins.toJSON seerrConfig;
-          mode = "0644";
+          mode = "0600";
         })
       ];
+      seerrSettings = "${config.neo.core.volumes.appdata}/${N.seerr}/config/settings.json";
+      # settings.json without the parts declarr regenerates on every run.
+      settingsDigest = ''${pkgs.jq}/bin/jq -S 'del(.clientId)' "$SETTINGS_FILE" 2>/dev/null | sha256sum'';
     in {
       config = mkIf cfg.enabled {
-        systemd.services.declarr = {
-          after =
-            (optionals (config.neo.services.swag.enabled or false) ["docker-swag.service"])
-            ++ (optionals hs.sonarr.enabled ["docker-sonarr.service"])
-            ++ (optionals hs.radarr.enabled ["docker-radarr.service"])
-            ++ (optionals hs.lidarr.enabled ["docker-lidarr.service"])
-            ++ (optionals hs.prowlarr.enabled ["docker-prowlarr.service"])
-            ++ (optionals hs.qbittorrent.enabled ["docker-qbittorrent.service"])
-            ++ (optionals (hs.jellyfin.enabled or false) ["docker-jellyfin.service"]);
-          # We intentionally do not list docker-seerr here (to avoid dep cycle, since
-          # docker-seerr after/wants declarr when declarr enabled). Instead, on successful
-          # finish of declarr we use ExecStartPost to restart docker-seerr.service so it
-          # picks up any config changes from the sync (e.g. *arr connections, libraries).
-          wants = ["docker.service"];
+        systemd.services.${name} = lib.neo.mkSetupService {
+          inherit pkgs name;
+          description = "Configure the media apps${plugin.label} (declarr)";
+          containers = map (s: N.${s}) arrContainers;
+          after = swagAfter;
+          wants = swagAfter;
           wantedBy = ["multi-user.target"];
-          inherit preStart;
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            User = "root";
-            Restart = "on-failure";
-            RestartSec = 5;
-            StartLimitBurst = 3;
-            StartLimitIntervalSec = 300;
-          };
+          retryInterval = 30;
           script = ''
-            echo "Running declarr sync for high_sea *arr stack..."
+            ${prepare}
+            echo "Running declarr sync for the media apps"
             ${declarrPkg}/bin/declarr --sync ${arrConfigFile}
-            echo "declarr sync complete."
+            echo "declarr sync complete"
           '';
         };
-        systemd.services.declarr-seerr = lib.mkIf hs.seerr.enabled {
-          after =
-            (optionals (config.neo.services.swag.enabled or false) ["docker-swag.service"])
-            ++ (optionals hs.sonarr.enabled ["docker-sonarr.service"])
-            ++ (optionals hs.radarr.enabled ["docker-radarr.service"])
-            ++ (optionals hs.lidarr.enabled ["docker-lidarr.service"])
-            ++ (optionals hs.prowlarr.enabled ["docker-prowlarr.service"])
-            ++ (optionals hs.qbittorrent.enabled ["docker-qbittorrent.service"])
-            ++ (optionals (hs.jellyfin.enabled or false) ["docker-jellyfin.service"]);
-          wants = ["docker.service"];
+
+        # Not bound to docker-seerr: restarting Seerr below must not run this
+        # again. Seerr writes settings.json on its first start; until then
+        # this retries. Once Seerr is set up (media server chosen) it leaves
+        # the file alone.
+        systemd.services."${name}-seerr" = lib.mkIf (on "seerr") (lib.neo.mkSetupService {
+          inherit pkgs;
+          name = "${name}-seerr";
+          description = "Pre-configure Seerr${plugin.label} (declarr)";
+          after = ["docker-${N.seerr}.service"] ++ swagAfter ++ map (s: "docker-${N.${s}}.service") arrContainers;
+          wants = ["docker-${N.seerr}.service"];
           wantedBy = ["multi-user.target"];
-          inherit preStart;
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            User = "root";
-            Restart = "on-failure";
-            RestartSec = 5;
-            StartLimitBurst = 3;
-            StartLimitIntervalSec = 300;
-            ExecStartPost = ''
-              ${pkgs.systemd}/bin/systemctl restart docker-seerr.service --no-block
-            '';
-          };
+          retryInterval = 15;
+          path = [pkgs.jq pkgs.coreutils pkgs.systemd];
           script = ''
-            SETTINGS_FILE="${config.neo.core.volumes.appdata}/seerr/config/settings.json"
-
-            while [ ! -f "$SETTINGS_FILE" ]; do
-              echo "Seerr settings file not found at $SETTINGS_FILE — waiting 10 seconds..."
-              sleep 10
-            done
-
-            MEDIA_SERVER_TYPE=$(${pkgs.jq}/bin/jq -r '.main.mediaServerType // "null"' "$SETTINGS_FILE" 2>/dev/null || echo "null")
-
-            if [ "$MEDIA_SERVER_TYPE" = "4" ]; then
-              echo "Running declarr sync for high_sea seerr docker container"
-              ${declarrPkg}/bin/declarr --sync ${seerrConfigFile}
-              echo "declarr sync complete."
-            else
-              echo "seerr already set up"
+            ${prepare}
+            SETTINGS_FILE="${seerrSettings}"
+            if [ ! -f "$SETTINGS_FILE" ]; then
+              echo "Seerr has not written $SETTINGS_FILE yet"
+              exit 1
+            fi
+            MEDIA_SERVER_TYPE=$(jq -r '.main.mediaServerType // "null"' "$SETTINGS_FILE" 2>/dev/null || echo "null")
+            if [ "$MEDIA_SERVER_TYPE" != "4" ]; then
+              echo "Seerr is already set up"
+              exit 0
+            fi
+            before=$(${settingsDigest})
+            echo "Running declarr sync for Seerr"
+            ${declarrPkg}/bin/declarr --sync ${seerrConfigFile}
+            after=$(${settingsDigest})
+            if [ "$before" != "$after" ]; then
+              echo "Seerr settings changed, restarting Seerr"
+              systemctl restart --no-block docker-${N.seerr}.service
             fi
           '';
-        };
+        });
       };
     };
 }

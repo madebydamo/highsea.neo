@@ -1,23 +1,25 @@
 # Hermes skill for jellyfin — library + REST API (Emby-compatible).
 {...}: {
-  flake.modules.nixos.jellyfin-skills = {
+  neoPlugin.modules.jellyfin-skills = {
     config,
     lib,
+    plugin,
     ...
   }: let
-    cfg = config.neo.services.jellyfin;
+    name = plugin.name "jellyfin";
+    cfg = config.neo.services.${name};
     domain = config.neo.services.swag.domain or null;
     publicUrl =
       if domain != null && domain != "" && (cfg.subdomain or null) != null
       then "https://${cfg.subdomain}.${domain}"
-      else "https://jellyfin.<domain>";
+      else "https://${name}.<domain>";
   in {
-    config.neo.services.jellyfin.skill.conf = lib.neo.mkServiceSkill {
-      service = "jellyfin";
-      inherit cfg domain;
+    config.neo.services.${name}.skill.conf = lib.neo.mkServiceSkill {
+      service = name;
+      inherit config;
       description = "Jellyfin media server, users, library, REST API";
       tags = ["neo" "high_sea" "jellyfin" "media" "api"];
-      title = "Neo · Jellyfin (high_sea)";
+      title = "Neo · Jellyfin${plugin.label}";
       body = ''
         ## When to Use
 

@@ -1,183 +1,185 @@
-# Qbittorrent service implementation.
+# qBittorrent service implementation.
+# preStart writes qBittorrent.conf on every start (ports, paths, Web UI login).
+# qbittorrent-portcheck dials the listen port from the container's network
+# namespace (gluetun's when routed) and restarts qBittorrent when it is closed.
 {...}: {
-  flake.modules.nixos.qbittorrent = {
+  neoPlugin.modules.qbittorrent = {
     config,
     lib,
     pkgs,
+    plugin,
     ...
   }:
     with lib; let
-      cfg = config.neo.services.qbittorrent;
-      confPath = "${config.neo.core.volumes.appdata}/qbittorrent/config/qBittorrent/qBittorrent.conf";
+      name = plugin.name "qbittorrent";
+      cfg = config.neo.services.${name};
+      appdata = "${config.neo.core.volumes.appdata}/${name}";
+      confPath = "${appdata}/config/qBittorrent/qBittorrent.conf";
     in {
-      config = mkIf cfg.enabled {
-        systemd.services.docker-qbittorrent.preStart = lib.concatStringsSep "\n" [
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.data}/Downloads";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/qbittorrent";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/qbittorrent/downloads";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/qbittorrent/config";
-          })
-          (lib.neo.mkActivationScriptForDir config {
-            dirPath = "${config.neo.core.volumes.appdata}/qbittorrent/config/qBittorrent";
-          })
-          ''
-            pw=${escapeShellArg cfg.password}
-            u=${escapeShellArg cfg.username}
-            wp=${toString cfg.webPort}
-            lp=${toString cfg.listenPort}
-            h=$(${pkgs.python3}/bin/python3 ${./passwordhashing.py} "$pw")
-            cat << ACTEOF | sed "s/^[[:space:]]*//" > ${confPath}
-            [AutoRun]
-            enabled=false
-            program=
+      # Two copies behind the VPN share gluetun's ports: both are settings.
+      # Outside mkIf: a definition of neo.services.<name> cannot depend on
+      # its own `enabled`.
+      config = mkMerge [
+        {neo.services.${name}.vpn.ports = [cfg.webPort cfg.listenPort];}
+        (mkIf cfg.enabled {
+          systemd.services."docker-${name}".preStart = lib.concatStringsSep "\n" [
+            (lib.neo.mkEnsureDirs config [
+              "${config.neo.core.volumes.data}/Downloads"
+              appdata
+              "${appdata}/downloads"
+              "${appdata}/config"
+              "${appdata}/config/qBittorrent"
+            ])
+            ''
+              pw=${escapeShellArg cfg.password}
+              u=${escapeShellArg cfg.username}
+              wp=${toString cfg.webPort}
+              lp=${toString cfg.listenPort}
+              h=$(${pkgs.python3}/bin/python3 ${./passwordhashing.py} "$pw")
+              cat << ACTEOF | sed "s/^[[:space:]]*//" > ${confPath}
+              [AutoRun]
+              enabled=false
+              program=
 
-            [BitTorrent]
-            Session\AddTorrentStopped=false
-            Session\DefaultSavePath=/downloads
-            Session\ExcludedFileNames=
-            Session\GlobalMaxInactiveSeedingMinutes=1440
-            Session\GlobalMaxRatio=1.5
-            Session\GlobalMaxSeedingMinutes=1440
-            Session\Port=$lp
-            Session\QueueingSystemEnabled=true
-            Session\ShareLimitAction=Stop
-            Session\TempPath=/downloads/incomplete/
+              [BitTorrent]
+              Session\AddTorrentStopped=false
+              Session\DefaultSavePath=/downloads
+              Session\ExcludedFileNames=
+              Session\GlobalMaxInactiveSeedingMinutes=1440
+              Session\GlobalMaxRatio=1.5
+              Session\GlobalMaxSeedingMinutes=1440
+              Session\Port=$lp
+              Session\QueueingSystemEnabled=true
+              Session\ShareLimitAction=Stop
+              Session\TempPath=/downloads/incomplete/
 
-            [LegalNotice]
-            Accepted=true
+              [LegalNotice]
+              Accepted=true
 
-            [Preferences]
-            IPFilter\BannedIPs=
-            Connection\PortRange=$lp
-            Connection\PortRangeMin=$lp
-            Connection\UPnP=false
-            Downloads\DefaultSavePath=/downloads
-            Downloads\SavePath=/downloads
-            Downloads\ScanDirsV2=@Variant(\0\0\0\x1c\0\0\0\0)
-            Downloads\TempPath=/downloads/incomplete/
-            WebUI\Address=*
-            WebUI\CSRFProtection=false
-            WebUI\HostHeaderValidation=false
-            WebUI\ServerDomains=*
-            WebUI\Username=$u
-            WebUI\Password_PBKDF2="@ByteArray($h)"
-            WebUI\Port=$wp
-            WebUI\LocalHostAuth=false
-            ACTEOF
-            chown ${toString config.neo.core.uid}:${toString config.neo.core.gid} ${confPath}
-            chmod 0644 ${confPath}
-          ''
-        ];
-
-        virtualisation.oci-containers.containers.qbittorrent = {
-          environment = {
-            PUID = toString config.neo.core.uid;
-            PGID = toString config.neo.core.gid;
-            TZ = config.neo.core.timeZone;
-            UMASK_SET = "022";
-            WEBUI_PORT = toString cfg.webPort;
-            TORRENTING_PORT = toString cfg.listenPort;
-          };
-          image = cfg.containers.qbittorrent;
-          autoStart = true;
-          volumes = [
-            "${config.neo.core.volumes.appdata}/qbittorrent/config:/config"
-            "${config.neo.core.volumes.data}/Downloads:/downloads"
+              [Preferences]
+              IPFilter\BannedIPs=
+              Connection\PortRange=$lp
+              Connection\PortRangeMin=$lp
+              Connection\UPnP=false
+              Downloads\DefaultSavePath=/downloads
+              Downloads\SavePath=/downloads
+              Downloads\ScanDirsV2=@Variant(\0\0\0\x1c\0\0\0\0)
+              Downloads\TempPath=/downloads/incomplete/
+              WebUI\Address=*
+              WebUI\CSRFProtection=false
+              WebUI\HostHeaderValidation=false
+              WebUI\ServerDomains=*
+              WebUI\Username=$u
+              WebUI\Password_PBKDF2="@ByteArray($h)"
+              WebUI\Port=$wp
+              WebUI\LocalHostAuth=false
+              ACTEOF
+              chown ${toString config.neo.core.uid}:${toString config.neo.core.gid} ${confPath}
+              chmod 0644 ${confPath}
+            ''
           ];
-          networks = ["internal"];
-        };
 
-        # Replaces the former portcheck container: detect closed torrent listen port
-        # (from inside the container/VPN netns) and restart docker-qbittorrent.
-        systemd.services.qbittorrent-portcheck = {
-          description = "Restart qBittorrent when torrent listen port is closed";
-          after = ["docker-qbittorrent.service"];
-          wants = ["docker-qbittorrent.service"];
-          wantedBy = ["multi-user.target"];
-          path = with pkgs; [
-            bash
-            coreutils
-            docker
-            gawk
-            iproute2
-            systemd
-            util-linux
-          ];
-          serviceConfig = {
-            Type = "simple";
-            Restart = "always";
-            RestartSec = "10s";
+          virtualisation.oci-containers.containers.${name} = {
+            environment =
+              lib.neo.linuxserverEnv config
+              // {
+                UMASK_SET = "022";
+                WEBUI_PORT = toString cfg.webPort;
+                TORRENTING_PORT = toString cfg.listenPort;
+              };
+            image = cfg.containers.${name};
+            volumes = [
+              "${appdata}/config:/config"
+              "${config.neo.core.volumes.data}/Downloads:/downloads"
+            ];
+            networks = ["internal"];
           };
-          script = ''
-            set -uo pipefail
 
-            LISTEN_PORT=${toString cfg.listenPort}
-            INTERVAL=300
-            DIAL_TIMEOUT=5
+          # Detects a closed torrent listen port (from inside the container/VPN
+          # netns) and restarts the container. Listed in extraUnits (option.nix).
+          systemd.services."${name}-portcheck" = {
+            description = "Restart qBittorrent${plugin.label} when its torrent listen port is closed";
+            after = ["docker-${name}.service"];
+            wants = ["docker-${name}.service"];
+            wantedBy = ["multi-user.target"];
+            path = with pkgs; [
+              bash
+              coreutils
+              docker
+              gawk
+              iproute2
+              systemd
+              util-linux
+            ];
+            serviceConfig = {
+              Type = "simple";
+              Restart = "always";
+              RestartSec = "10s";
+            };
+            script = ''
+              set -uo pipefail
 
-            log() {
-              echo "$(date -Iseconds) $*"
-            }
+              LISTEN_PORT=${toString cfg.listenPort}
+              INTERVAL=300
+              DIAL_TIMEOUT=5
 
-            get_container_pid() {
-              docker inspect -f '{{.State.Pid}}' qbittorrent 2>/dev/null || true
-            }
+              log() {
+                echo "$(date -Iseconds) $*"
+              }
 
-            # Source address used for outbound traffic in the container netns
-            # (gluetun/VPN interface when vpn.enabled).
-            get_outbound_ip() {
-              local pid=$1
-              nsenter -t "$pid" -n ip -4 route get 1.1.1.1 2>/dev/null \
-                | awk '{for (i = 1; i <= NF; i++) if ($i == "src") { print $(i+1); exit }}'
-            }
+              get_container_pid() {
+                docker inspect -f '{{.State.Pid}}' ${name} 2>/dev/null || true
+              }
 
-            # TCP dial from the container network namespace (same idea as the old Go portcheck).
-            port_is_open() {
-              local pid=$1 ip=$2 port=$3
-              nsenter -t "$pid" -n timeout "$DIAL_TIMEOUT" \
-                bash -c "echo >/dev/tcp/''${ip}/''${port}" 2>/dev/null
-            }
+              # Source address used for outbound traffic in the container netns
+              # (gluetun/VPN interface when vpn.enabled).
+              get_outbound_ip() {
+                local pid=$1
+                nsenter -t "$pid" -n ip -4 route get 1.1.1.1 2>/dev/null \
+                  | awk '{for (i = 1; i <= NF; i++) if ($i == "src") { print $(i+1); exit }}'
+              }
 
-            first=1
-            while true; do
-              if [[ "$first" -eq 0 ]]; then
-                sleep "$INTERVAL"
-              fi
-              first=0
+              # TCP dial from the container network namespace (same idea as the old Go portcheck).
+              port_is_open() {
+                local pid=$1 ip=$2 port=$3
+                nsenter -t "$pid" -n timeout "$DIAL_TIMEOUT" \
+                  bash -c "echo >/dev/tcp/''${ip}/''${port}" 2>/dev/null
+              }
 
-              if ! systemctl is-active --quiet docker-qbittorrent; then
-                log "docker-qbittorrent is not active; skipping check"
-                continue
-              fi
+              first=1
+              while true; do
+                if [[ "$first" -eq 0 ]]; then
+                  sleep "$INTERVAL"
+                fi
+                first=0
 
-              pid=$(get_container_pid)
-              if [[ -z "$pid" || "$pid" == "0" ]]; then
-                log "could not get qbittorrent container pid; skipping check"
-                continue
-              fi
+                if ! systemctl is-active --quiet docker-${name}; then
+                  log "docker-${name} is not active; skipping check"
+                  continue
+                fi
 
-              ip=$(get_outbound_ip "$pid" || true)
-              if [[ -z "$ip" ]]; then
-                log "could not determine outbound IP; skipping check"
-                continue
-              fi
+                pid=$(get_container_pid)
+                if [[ -z "$pid" || "$pid" == "0" ]]; then
+                  log "could not get ${name} container pid; skipping check"
+                  continue
+                fi
 
-              if port_is_open "$pid" "$ip" "$LISTEN_PORT"; then
-                continue
-              fi
+                ip=$(get_outbound_ip "$pid" || true)
+                if [[ -z "$ip" ]]; then
+                  log "could not determine outbound IP; skipping check"
+                  continue
+                fi
 
-              log "listen port ''${LISTEN_PORT} closed on ''${ip}; restarting docker-qbittorrent"
-              systemctl restart docker-qbittorrent || log "restart of docker-qbittorrent failed"
-            done
-          '';
-        };
-      };
+                if port_is_open "$pid" "$ip" "$LISTEN_PORT"; then
+                  continue
+                fi
+
+                log "listen port ''${LISTEN_PORT} closed on ''${ip}; restarting docker-${name}"
+                systemctl restart docker-${name} || log "restart of docker-${name} failed"
+              done
+            '';
+          };
+        })
+      ];
     };
 }

@@ -1,40 +1,57 @@
 # Jellyfin service options.
 {...}: {
-  flake.modules.nixos.jellyfin-option = {
+  neoPlugin.modules.jellyfin-option = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib;
-    with {inherit (lib.neo) mkOption mkEnableOption;}; {
-      options.neo.services.jellyfin = mkOption {
+    with {inherit (lib.neo) mkOption mkEnableOption;}; let
+      name = plugin.name "jellyfin";
+    in {
+      options.neo.services.${name} = mkOption {
         type = types.submodule {
           options =
             {
-              enabled = mkEnableOption "jellyfin service" {rank = 0;};
+              enabled = mkEnableOption "Your films, shows and music, streamed to every screen${plugin.label}" {rank = 0;};
             }
-            // neo.mkReverseProxyOptions {
-              subdomain = "jellyfin";
+            # Jellyfin has its own accounts and its apps cannot pass the Neo login.
+            // lib.neo.mkReverseProxyOptions {
+              subdomain = name;
               auth.available = false;
             }
             // lib.neo.mkContainerDefinitions {
-              jellyfin = "lscr.io/linuxserver/jellyfin:latest";
+              ${name} = "lscr.io/linuxserver/jellyfin:latest";
             }
-            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/jellyfin"
+            // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/${name}"
             // lib.neo.mkServiceMeta {
               category = "Media";
-              icon = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jellyfin.svg";
+              icon = ./icon.svg;
+              tagline = "Your own Netflix for the films and shows you own${plugin.label}";
               description = ''
-                Jellyfin is the volunteer-built media solution that puts you in control of your media. Stream to any device from your own server, with no strings attached.
+                Watch your films, shows and music on the TV, phone or browser, at home or away.
+                Jellyfin remembers where everyone stopped and shows covers, descriptions and subtitles, like a streaming service for your own library.
               '';
+              notes = ''
+                Jellyfin has its own accounts: the first visit creates the admin account. It is not behind the Neo login page, so its apps can connect.
+                It reads everything under Media and converts videos with the graphics chip of the server when the device cannot play them directly.
+                Devices on your home network do not find it on their own (no DLNA or auto-discovery); enter the address in the app.
+              '';
+              replaces = ["Netflix" "Plex"];
+              privacy = ["movies-tv"];
               projectUrl = "https://jellyfin.org/";
               githubUrl = "https://github.com/jellyfin/jellyfin";
               releaseUrl = "https://github.com/jellyfin/jellyfin/releases";
+              license = {
+                spdx = "GPL-2.0-only";
+                url = "https://github.com/jellyfin/jellyfin/blob/master/LICENSE";
+              };
             }
             // lib.neo.mkSkillOptions {};
         };
         default = {};
-        description = "Jellyfin service configuration";
+        description = "Jellyfin: streams your media library";
       };
     };
 }

@@ -1,20 +1,22 @@
-# Flaresolverr service implementation.
+# FlareSolverr service implementation.
 {...}: {
-  flake.modules.nixos.flaresolverr = {
+  neoPlugin.modules.flaresolverr = {
     config,
     lib,
+    plugin,
     ...
   }:
     with lib; let
-      cfg = config.neo.services.flaresolverr;
+      name = plugin.name "flaresolverr";
+      cfg = config.neo.services.${name};
     in {
       config = mkIf cfg.enabled {
-        virtualisation.oci-containers.containers.flaresolverr = {
+        virtualisation.oci-containers.containers.${name} = {
+          image = cfg.containers.${name};
           environment = {
             TZ = config.neo.core.timeZone;
+            LOG_LEVEL = "info";
           };
-          image = cfg.containers.flaresolverr;
-          autoStart = true;
           networks = ["internal"];
         };
       };
