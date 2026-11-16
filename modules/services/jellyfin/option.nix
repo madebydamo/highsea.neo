@@ -23,6 +23,7 @@
             }
             // lib.neo.mkContainerDefinitions {
               ${name} = "lscr.io/linuxserver/jellyfin:latest";
+              extraUnits = ["${name}-metrics"];
             }
             // lib.neo.mkAppdata "${config.neo.core.volumes.appdata}/${name}"
             // lib.neo.mkServiceMeta {
