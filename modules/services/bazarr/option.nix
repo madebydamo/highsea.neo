@@ -16,12 +16,13 @@
             {
               enabled = mkEnableOption "Subtitles for your films and shows, downloaded automatically${plugin.label}" {rank = 0;};
               # Written into Bazarr's config.yaml by bazarr-setup; the
-              # exporter uses the same key.
+              # exporter uses the same key. 32 characters: exportarr accepts 20 to 32
+              # letters or digits and nothing longer (_lib.nix arrMonitoring).
               apiKey = lib.neo.mkSecretOption {
                 type = types.nullOr types.str;
                 default = null;
                 description = "Key scripts and the monitoring use to talk to Bazarr. Changing it takes effect on the next start of Bazarr.";
-                helper = lib.neo.helpers.randomToken;
+                helper = lib.neo.helpers.randomToken32Hex;
                 rank = 5;
                 ui = lib.neo.ui.mkUi {label = "API key";};
               };

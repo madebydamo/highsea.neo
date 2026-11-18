@@ -104,6 +104,19 @@
         # cannot depend on its own `enabled`.
         {neo.services.${name}.systemdUnits = lib.mkIf collecting (lib.mkOptionDefault ["docker-${exporter}"]);}
         (lib.mkIf (cfg.enabled && collecting) {
+          # exportarr refuses to start with a key that is not 20 to 32 letters
+          # or digits, although the app itself takes longer ones. Say so at
+          # build time instead of a restart loop. An encrypted key is a
+          # placeholder here and cannot be measured.
+          assertions = [
+            {
+              assertion =
+                !lib.neo.isSet apiKey
+                || lib.neo.secrets.isPlaceholder apiKey
+                || builtins.match "[A-Za-z0-9]{20,32}" apiKey != null;
+              message = "neo.services.${name}: apiKey must be 20 to 32 letters or digits while Monitoring collects (its metrics exporter accepts nothing else). Use the Generate helper for a new key; apps you connected to ${label} by hand need the new key.";
+            }
+          ];
           virtualisation.oci-containers.containers.${exporter} = {
             image = self.images.exportarr;
             cmd = [svc];
