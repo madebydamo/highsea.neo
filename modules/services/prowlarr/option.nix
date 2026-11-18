@@ -16,12 +16,13 @@
             {
               enabled = mkEnableOption "One place for the sites your media apps search${plugin.label}" {rank = 0;};
               # Reaches the container as PROWLARR__AUTH__APIKEY; declarr and the
-              # exporter use the same key.
+              # exporter use the same key. 32 characters: exportarr accepts 20 to 32
+              # letters or digits and nothing longer (_lib.nix arrMonitoring).
               apiKey = lib.neo.mkSecretOption {
                 type = types.nullOr types.str;
                 default = null;
                 description = "Key the other media apps use to talk to Prowlarr. Changing it is passed on to apps the media helper connects; apps you connected by hand need the new key.";
-                helper = lib.neo.helpers.randomToken;
+                helper = lib.neo.helpers.randomToken32Hex;
                 rank = 5;
                 ui = lib.neo.ui.mkUi {label = "API key";};
               };
