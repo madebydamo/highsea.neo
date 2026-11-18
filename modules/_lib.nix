@@ -168,7 +168,9 @@
                   # (indexer down, download client unreachable, folder missing).
                   # "> 0": a healthy app is one series with value 0 and no
                   # labels of a problem; Bazarr's has no `type` to filter on.
-                  expr = ''count by (host) (${svc}_system_health_issues{${asel}${lib.optionalString (svc != "bazarr") '', type=~"warning|error"''}} > 0)'';
+                  # Not UpdateCheck ("New update is available"): the image
+                  # brings the update, on the updater's schedule.
+                  expr = ''count by (host) (${svc}_system_health_issues{${asel}${lib.optionalString (svc != "bazarr") '', type=~"warning|error", source!="UpdateCheck"''}} > 0)'';
                   above = 0;
                   for = "1h";
                   summary = "${title} on {{ $labels.host }} reports {{ printf \"%.0f\" $values.B.Value }} problems on its System → Status page for an hour.";
