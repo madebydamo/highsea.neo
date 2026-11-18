@@ -376,7 +376,8 @@
                 sslCertPath = "";
                 sslCertPassword = "";
                 instanceName = "Radarr";
-                branch = "main";
+                # Radarr's stable branch: it has no "main" (that is Sonarr's).
+                branch = "master";
                 logLevel = "info";
                 consoleLogLevel = "";
                 logSizeLimit = 1;
@@ -549,7 +550,8 @@
                 sslCertPath = "";
                 sslCertPassword = "";
                 instanceName = "Prowlarr";
-                branch = "main";
+                # Prowlarr's stable branch: it has no "main" (that is Sonarr's).
+                branch = "master";
                 logLevel = "info";
                 consoleLogLevel = "";
                 logSizeLimit = 1;

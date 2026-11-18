@@ -42,7 +42,7 @@
             w = 6;
             h = 4;
             description = "Problems Bazarr reports on its System → Status page.";
-            targets = [(pq "count(bazarr_system_health_issues{${sel}}) or vector(0)" "")];
+            targets = [(pq "count(bazarr_system_health_issues{${sel}} > 0) or vector(0)" "")];
             thresholds = thresholdsGreenRed [
               {
                 color = "red";
