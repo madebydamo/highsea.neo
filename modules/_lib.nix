@@ -30,7 +30,9 @@
       # Jellyfin: "[12:00:00] [ERR] [12] Emby.Server…"
       jellyfin = ''|~ `\[(ERR|FTL)\]` '';
       # Seerr (winston): "2026-…Z [error][Jobs]: …"
-      seerr = ''|~ `\[(error|crit|alert|emerg)\]` '';
+      # Not "Unable to find TMDb ID": logged on every Jellyfin sync (5 minutes)
+      # for each film in the library that is not on TMDb, e.g. a home video.
+      seerr = ''|~ `\[(error|crit|alert|emerg)\]` !~ `Unable to find TMDb ID` '';
       # Audiobookshelf: "[2026-… 12:00:00.000] ERROR: …"
       audiobookshelf = ''|~ `\] (ERROR|FATAL):` '';
       # Tdarr: "[2026-…] [ERROR] Tdarr_Server - …"
@@ -164,7 +166,9 @@
                   title = "${title}: reports a problem";
                   # Warnings and errors from the app's own health check
                   # (indexer down, download client unreachable, folder missing).
-                  expr = ''count by (host) (${svc}_system_health_issues{${asel}${lib.optionalString (svc != "bazarr") '', type=~"warning|error"''}})'';
+                  # "> 0": a healthy app is one series with value 0 and no
+                  # labels of a problem; Bazarr's has no `type` to filter on.
+                  expr = ''count by (host) (${svc}_system_health_issues{${asel}${lib.optionalString (svc != "bazarr") '', type=~"warning|error"''}} > 0)'';
                   above = 0;
                   for = "1h";
                   summary = "${title} on {{ $labels.host }} reports {{ printf \"%.0f\" $values.B.Value }} problems on its System → Status page for an hour.";
